@@ -39,6 +39,8 @@ library(phyloseq)
 library(ggplot2)
 library(dplyr)
 library(stringr)
+library(tidyr)
+library(magrittr)
 ```
 
 ## Define Paths
@@ -49,8 +51,48 @@ poly.rds ="/sharedspace/polystyrene/demultiplexed/dada2/ibiemProject1_subset.rds
 ## Check Phyloseq RDS
 Load your phyloseq RDS and `print` it just to be sure things look sane
 ```{r}
-atacama.ps = read_rds(atacama.rds)
-print(atacama.ps)
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+sample_data(poly.ps)
+sample_data(poly.ps)["1_2",]
+head(rownames(sample_data(poly.ps)))
+head(sample_data(poly.ps)$Description)
+rownames(sample_data(poly.ps)) == sample_data(poly.ps)$Description
+
+df <- sample_data(poly.ps) %>%
+  separate(Description, into = c("Week", "CollectionID"))
+data.frame(df)
+
+week <- NULL
+collectionID <- NULL
+site <- NULL
+group <- NULL
+
+# create week and collectionID variables
+for(i in 1:nrow(sample_data(poly.ps))){
+  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+  collectionID[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][2]
+}
+
+for(k in 1:nrow(sample_data(poly.ps))){
+  if (collectionID[i] %in% 1:4) site[i] <- "Landfill"
+  
+}
+
+# create site variable
+site[collectionID %in% 1:4] <- "LF"
+site[collectionID %in% 5:8] <- "ER"
+site[collectionID %in% 9:12] <- "AS"
+site[collectionID %in% 13:16] <- "RC"
+
+# create group variable 
+```
+
+```{r}
+
 ```
 
 ## Basic Challenges
@@ -58,7 +100,7 @@ print(atacama.ps)
 Start by making a simple absolute abundance bar plot with samples on the x-axis and absolute abundance on the y-axis.  Here is an example from the phyloseq tutorial.
 ![basic abundance plot](https://joey711.github.io/phyloseq/plot_bar-examples_files/figure-html/unnamed-chunk-3-1.png)
 ```{r}
-plot_bar(atacama.ps)
+plot_bar(poly.ps)
 ```
 ```{r}
 sn <- sample_names(atacama.ps)
