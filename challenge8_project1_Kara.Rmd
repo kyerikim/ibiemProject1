@@ -83,7 +83,7 @@ group[mod(collectionID, 4) == 3] <- "PSS"
 group[mod(collectionID, 4) == 0] <- "C"
 
 # add new variables to dataset
-df$Week <- week
+df$Week <- as.numeric(week)
 df$Site <- site
 df$Group <- group
 
@@ -100,7 +100,14 @@ poly.new.ps <- phyloseq(otu_table(poly.ps),
 ```
 
 ```{r}
-plot_richness(poly.new.ps, x="Week", measures=c("Shannon", "Simpson"), color="Site") + theme_bw()
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + theme_bw() +
+  facet_wrap(~Site)
+```
+
+```{r}
+# simpson
+plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") + theme_bw() +
+  facet_wrap(~Site)
 ```
 
 ## Relative Abundance Barplot
@@ -109,9 +116,11 @@ plot_richness(poly.new.ps, x="Week", measures=c("Shannon", "Simpson"), color="Si
 top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
 ps.top20 <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
+
 plot_bar(ps.top20, x="Description", fill="Family") + 
   geom_bar(stat = "identity", position = "stack", size=0) +
-  facet_wrap(~Site, scales="free_x")
+  facet_wrap(~Site + Group, scales="free_x") 
+
 ```
 
 
