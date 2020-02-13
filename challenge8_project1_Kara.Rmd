@@ -122,6 +122,8 @@ plot_bar(ps.top20, x="Week", fill="Family") +
 }
 
 rel_abund_func(ps_LF)
+
+str(otu_table(ps_LF))
 ```
 
 ```{r}
