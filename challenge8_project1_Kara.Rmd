@@ -89,6 +89,18 @@ df$Group <- group
 
 # here is the new sample_data
 df
+
+```
+
+Add newly created sample_data file to phyloseq object
+```{r}
+poly.new.ps <- phyloseq(otu_table(poly.ps),
+               df,
+               tax_table(poly.ps))
+```
+
+```{r}
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon", "Simpson"), color="Site") + theme_bw()
 ```
 
 
