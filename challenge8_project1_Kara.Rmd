@@ -70,11 +70,6 @@ for(i in 1:nrow(sample_data(poly.ps))){
   collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
 }
 
-for(k in 1:nrow(sample_data(poly.ps))){
-  if (collectionID[i] %in% 1:4) site[i] <- "Landfill"
-  
-}
-
 # create site variable
 site[collectionID %in% 1:4] <- "LF"
 site[collectionID %in% 5:8] <- "ER"
@@ -90,8 +85,9 @@ group[mod(collectionID, 4) == 0] <- "C"
 # add new variables to dataset
 df$Week <- week
 df$Site <- site
-df$Grup <- group
+df$Group <- group
 
+# here is the new sample_data
 df
 ```
 
