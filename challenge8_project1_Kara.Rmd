@@ -103,6 +103,17 @@ poly.new.ps <- phyloseq(otu_table(poly.ps),
 plot_richness(poly.new.ps, x="Week", measures=c("Shannon", "Simpson"), color="Site") + theme_bw()
 ```
 
+## Relative Abundance Barplot
+
+```{r}
+top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+plot_bar(ps.top20, x="Description", fill="Family") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Site, scales="free_x")
+```
+
 
 ## Basic Challenges
 ### Simple absolute abundance plot
