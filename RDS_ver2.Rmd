@@ -1,25 +1,11 @@
 ---
-title: "Challenge 7"
-subtitle: "Take a newspaper. Take a pair of scissors . . . "
+title: "RDS_ver2"
 author: "Kyeri Kim"
-date: "10/23/2019"
+date: "2/18/2020"
 output:
   html_document:
     df_print: paged
 ---
-
-# Challenge 7
-The goal of this challenge is to synthesize what you have learned about R and DADA2 to generate a phyloseq object from the map file and the demultiplexed FASTQs that you generated in Challenge 6.  You will find this [overview of the DADA2 pipeline](https://github.com/ibiem-2019/ibiem_2019_material/blob/master/content/lessons/dada2_pipeline_toc.md) very helpful in completing this assignment.
-
-
-You will find the FASTQs, map file, and an md5 checksum file in `/data/tutorial_data/ibiem2016_subset`.  The name of the map file is `ibiem_2017_map_v3.txt`
-
-You must fill in the chunks below as indicated, but you are free to add other chunks too.  To submit this assignment for full credit you should *commit* and *push*:
-
-1. This file (`challenge7.Rmd`)
-2. The knited version of this file (`challenge7.html`)
-
-These are the *ONLY* files you should include in your repo.  I strongly recommend that you make a `scratch` subdirectory in your home directory, then make subdirectories for each project in scratch, for example `~/scratch/challenge7`.  If you don't follow this advice, but instead put temporary files in your repo directory, you *must* be sure not to commit them to your repo, you will lose points if you do.
 
 # Setup
 ## Load Libraries
@@ -40,7 +26,7 @@ To keep the code readable and portable, it is nice to assign paths to variables.
 
 ```{r}
 output.dir = path.expand("/home/guest/project1_ibiem/demultiplexed2")
-demux.dir = file.path(path.expand("/home/guest/project1_ibiem/demultiplexed2"), "demux")
+demux.dir = file.path(path.expand("/home/guest/project1_ibiem/demultiplexed2"), "demux_all")
 ```
 
 ```{r}
