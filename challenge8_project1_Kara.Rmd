@@ -173,6 +173,19 @@ rel_abund_func_level(ps_RC, "Genus")
 
 ```{r}
 # how to compare increasingness
+plot_bar(ps.top20, x="Description", fill="Genus") +
+    geom_point(size = 2) +
+  geom_line() +
+  facet_wrap(~Site, scales="free_x") 
+```
+
+```{r}
+mdf <-  psmelt(ps.top20)
+p <- ggplot(mdf, aes_string(x = "Week", y = "Abundance", color = "Genus")) +
+  geom_point(size = 2) +
+  geom_line() +
+  facet_wrap(~Site, scales="free_x")
+p
 ```
 
 
