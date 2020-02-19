@@ -44,11 +44,13 @@ Sys.setenv(R2_FASTQ = r2.fastq)
 
 ## Check Data Integrity
 Run `md5sum` on the raw data to be sure there has been no data loss or corruption.  The md5 checksum file is in the same directory as the FASTQs and map file.
+
+%%%% Kyeri: I changed map file so it gives error for that. I will skip this part. 
 ```{bash}
 cd $RAW_FASTQ_DIR
-md5sum -c md5_checksum_compressed_fastqs.txt
-```
 
+```
+md5sum -c md5_checksum_compressed_fastqs.txt
 
 # Assemble Metadata Table (Map)
 
@@ -57,9 +59,9 @@ QIIME is inflexible about map file formatting.  Fortunately, QIIME includes the
 [validate_mapping_file.py](http://qiime.org/scripts/validate_mapping_file.html)
 script that checks your map file to see if the format meets its specifications.  Unfortunately the script is not very robust, so incorrectly formated map files sometimes make it crash without giving a useful error message.  Let's run it anyway on the map file to be sure that the QIIME scripts won't choke on it.
 
-%%%% Kyeri: I changed map file so it gives error for that. I will skip this part. 
+
 ```{bash}
-#validate_mapping_file.py -m $MAP_FILE -o $OUT_DIR/validate_mapfile
+validate_mapping_file.py -m $MAP_FILE -o $OUT_DIR/validate_mapfile
 ```
 Once you have run `validate_mapping_file.py` you can view the report through RStudio:
 
@@ -98,8 +100,8 @@ split_libraries_fastq.py -r 999 -n 999 -q 0 -p 0.0001 \
 
 Now verify that most of the reads are demultiplexed to a specific sample
 ```{bash}
-#ls $DEMUX_DIR/tagged_4/
-#cat $DEMUX_DIR/tagged_4/histograms.txt
+ls $DEMUX_DIR/tagged_4/
+cat $DEMUX_DIR/tagged_4/histograms.txt
 cat $DEMUX_DIR/tagged_4/split_library_log.txt
 ```
 
