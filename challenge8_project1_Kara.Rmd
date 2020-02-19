@@ -163,7 +163,7 @@ plot_bar(ps.top20, fill = "Family") +
   labs(y = "Relative Abundance")
 
 # facet by site and group
-plot_bar(ps.top20, x="Description", fill="Family") + 
+plot_bar(ps.top20, x="Week", fill="Family") + 
   geom_bar(stat = "identity", position = "stack", size=0) +
   facet_wrap(~Site + Group, scales="free_x") 
 
