@@ -196,6 +196,20 @@ p <- ggplot(mdf, aes_string(x = "Week", y = "Abundance", color = "Genus")) +
 p
 ```
 
+## Permanova
+
+We will prune rare taxa and transform the data
+```{r}
+sample_min_count = 10000
+
+ps_LF %>%
+  prune_samples(sample_sums(.)>=sample_min_count, .) ->
+  ps.sample_prune_LF
+
+sample_sums(ps.sample_prune_LF) %>% sort
+
+```
+
 
 ## Basic Challenges
 ### Simple absolute abundance plot
