@@ -151,8 +151,11 @@ plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") +
 ```{r}
 # top 20 taxa across all sites and conditions
 top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
-ps.top20 <- prune_taxa(top20, ps.top20)
+ps.top20_rel <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20_rel)
+
+# check sample sums all add to 1
+sample_sums(ps.top20_rel)
 
 plot_bar(ps.top20, x="Description", fill="Family") + 
   geom_bar(stat = "identity", position = "stack", size=0) +
