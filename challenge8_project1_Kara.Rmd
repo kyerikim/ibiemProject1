@@ -157,6 +157,11 @@ ps.top20 <- prune_taxa(top20, ps.top20_rel)
 # check sample sums all add to 1
 sample_sums(ps.top20_rel)
 
+# plot ALL relative abundance in one plot
+plot_bar(ps.top20, fill = "Family") +
+  labs(y = "Relative Abundance")
+
+# facet by site and group
 plot_bar(ps.top20, x="Description", fill="Family") + 
   geom_bar(stat = "identity", position = "stack", size=0) +
   facet_wrap(~Site + Group, scales="free_x") 
