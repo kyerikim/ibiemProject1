@@ -41,6 +41,7 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 library(magrittr)
+library(vegan)
 ```
 
 ## Define Paths
@@ -219,7 +220,7 @@ ps.st_prune.even = prune_taxa(prune.vec, ps_even)
 ntaxa(ps.st_prune.even)
 ```
 ```{r}
-plot_bar(ps.st_prune.even)
+# plot_bar(ps.st_prune.even)
 ```
 
 We want to see if there are differences in microbial communities by sites and groups. A permanova analysis allows us to quantify this.
@@ -230,6 +231,23 @@ ps.st_prune.even %>%
   ps.st_prune.even.metadata
 ```
 
+```{r}
+ps.st_prune.even %>%
+  distance(method="bray") ->
+  ps.st_prune.even.bray
+
+```
+
+Permanova by Site and Group
+```{r}
+adonis(ps.st_prune.even.bray ~ Site + Group,
+       data = ps.st_prune.even.metadata) ->
+  site_adonis
+
+print(site_adonis)
+```
+
+Permanova by group
 
 
 # Session Info
