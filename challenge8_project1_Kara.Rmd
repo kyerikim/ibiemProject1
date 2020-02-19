@@ -113,42 +113,43 @@ ps_RC <- subset_samples(poly.new.ps, Site == "RC")
 
 ```{r}
 # landfill relative abundance plot
-rel_abund_func <- function(ps){
+rel_abund_func <- function(ps, level){
   top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20<- prune_taxa(top20, ps.top20)
 
-plot_bar(ps.top20, x="Week", fill="Family") + 
+plot_bar(ps.top20, x="Week", fill= level) + 
   geom_bar(stat = "identity", position = "stack", size=0) +
   facet_wrap(~Group, scales="free_x") 
 }
-
-rel_abund_func(ps_LF)
-
-str(otu_table(ps_LF))
 ```
 
 ```{r}
-rel_abund_func(ps_ER)
-rel_abund_func(ps_AS)
-rel_abund_func(ps_RC)
+rel_abund_func(ps_LF, "Family")
+rel_abund_func(ps_ER, "Family")
+rel_abund_func(ps_AS, "Family")
+rel_abund_func(ps_RC, "Family")
 ```
 
-
+Plot richness using Shannon
 ```{r}
-plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + theme_bw() +
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + 
+  theme_bw() +
   facet_wrap(~Site)
 ```
 
+Plot richness using Simpson
 ```{r}
 # simpson
-plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") + theme_bw() +
+plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") + 
+  theme_bw() +
   facet_wrap(~Site)
 ```
 
 ## Relative Abundance Barplot
 
 ```{r}
+# top 20 taxa across all sites and conditions
 top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
 ps.top20 <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
 ps.top20 <- prune_taxa(top20, ps.top20)
@@ -159,21 +160,6 @@ plot_bar(ps.top20, x="Description", fill="Family") +
 
 ```
 
-```{r}
-# relative abundance plots for genus level
-# change function to genus level
-
-rel_abund_func_level <- function(ps, level){
-  top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
-ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
-ps.top20<- prune_taxa(top20, ps.top20)
-
-plot_bar(ps.top20, x="Week", fill= level) + 
-  geom_bar(stat = "identity", position = "stack", size=0) +
-  facet_wrap(~Group, scales="free_x") 
-}
-
-```
 
 Plot relative abundance by genus level
 ```{r}
