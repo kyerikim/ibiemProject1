@@ -175,6 +175,14 @@ plot_bar(ps.top20, x="Week", fill= level) +
 
 ```
 
+Plot relative abundance by genus level
+```{r}
+rel_abund_func_level(ps_LF, "Genus")
+rel_abund_func_level(ps_ER, "Genus")
+rel_abund_func_level(ps_AS, "Genus")
+rel_abund_func_level(ps_RC, "Genus")
+```
+
 
 
 ```{r}
