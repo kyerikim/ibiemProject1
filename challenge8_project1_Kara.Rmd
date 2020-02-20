@@ -1,0 +1,259 @@
+---
+title: "Challenge 8"
+subtitle: "Out of an abundance of caution . . . "
+author: Kyeri Kim
+output:
+  html_document:
+    df_print: paged
+---
+# Abundance Plot Challenge
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=TRUE, include=TRUE)
+```
+
+## Background
+The goal of these challenges are to give you experience with absolute abundance plots, as well as with several features of phyloseq. For several technical reasons, the absolute abundance of amplicon sequencing reads is not biologically meaningful.  However, review of absolute abundance is important for quality control.
+
+## Resources
+These challenges are based on the [phyloseq plot_bar tutorial](https://joey711.github.io/phyloseq/plot_bar-examples.html), which will give you starting points for most of the challenges.  
+
+## Data
+For all of these challenges you will be using a lemur data phyloseq RDS that is available at `/data/tutorial_data/lemur_subset_phyloseq.rds`.
+
+## Completing and Submitting
+You must fill in the chunks below as indicated, but you are free to add other chunks too.  To submit this assignment for full credit you should *commit* and *push*:
+
+1. This file (`challenge8_assignment.Rmd`)
+2. The knited version of this file (`challenge8_assignment.html`)
+
+These are the *ONLY* files you should include in your repo.  I strongly recommend that you make a `scratch` subdirectory in your home directory, then make subdirectories for each project in scratch, for example `~/scratch/challenge8`.  If you don't follow this advice, but instead put temporary files in your repo directory, you *must* be sure not to commit them to your repo, you will lose points if you do.
+
+
+
+# Challenge Chunks
+## Load Libraries
+```{r}
+library(readr)
+library(phyloseq)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(magrittr)
+library(vegan)
+```
+
+## Define Paths
+```{r}
+poly.rds ="/sharedspace/polystyrene/demultiplexed/dada2/ibiemProject1_subset.rds"
+```
+
+## Check Phyloseq RDS
+Load your phyloseq RDS and `print` it just to be sure things look sane
+```{r}
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+# save sample data as a data frame
+df <- sample_data(poly.ps)
+
+week <- NULL
+collectionID <- NULL
+site <- NULL
+group <- NULL
+
+# create week and collectionID variables
+for(i in 1:nrow(sample_data(poly.ps))){
+  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
+}
+
+# create site variable
+site[collectionID %in% 1:4] <- "LF"
+site[collectionID %in% 5:8] <- "ER"
+site[collectionID %in% 9:12] <- "AS"
+site[collectionID %in% 13:16] <- "RC"
+
+# create group variable 
+group[mod(collectionID, 4) == 1] <- "PS"
+group[mod(collectionID, 4) == 2] <- "S"
+group[mod(collectionID, 4) == 3] <- "PSS"
+group[mod(collectionID, 4) == 0] <- "C"
+
+# add new variables to dataset
+df$Week <- as.numeric(week)
+df$Site <- site
+df$Group <- group
+
+# here is the new sample_data
+df
+df %>%
+  select(Description, Week, Site, Group)
+
+```
+
+Add newly created sample_data file to phyloseq object
+```{r}
+poly.new.ps <- phyloseq(otu_table(poly.ps),
+               df,
+               tax_table(poly.ps))
+
+```
+
+Subset by LF
+```{r}
+ps_LF <- subset_samples(poly.new.ps, Site == "LF")
+ps_ER <- subset_samples(poly.new.ps, Site == "ER")
+ps_AS <- subset_samples(poly.new.ps, Site == "AS")
+ps_RC <- subset_samples(poly.new.ps, Site == "RC")
+
+```
+
+```{r}
+# landfill relative abundance plot
+rel_abund_func <- function(ps, level, top){
+  top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:top]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20<- prune_taxa(top20, ps.top20)
+
+plot_bar(ps.top20, x="Week", fill= level) + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Group, scales="free_x") 
+}
+
+```
+
+```{r}
+rel_abund_func(ps_LF, "Family", 20)
+rel_abund_func(ps_ER, "Family", 20)
+rel_abund_func(ps_AS, "Family", 20)
+rel_abund_func(ps_RC, "Family", 20)
+```
+
+Plot richness using Shannon
+```{r}
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + 
+  theme_bw() +
+  facet_wrap(~Site)
+```
+
+Plot richness using Simpson
+```{r}
+# simpson
+plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") + 
+  theme_bw() +
+  facet_wrap(~Site)
+```
+
+## Relative Abundance Barplot
+
+```{r}
+# top 20 taxa across all sites and conditions
+top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
+ps.top20_rel <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20_rel)
+
+# check sample sums all add to 1
+sample_sums(ps.top20_rel)
+
+# plot ALL relative abundance in one plot
+plot_bar(ps.top20, fill = "Family") +
+  labs(y = "Relative Abundance")
+
+# facet by site and group
+plot_bar(ps.top20, x="Week", fill="Family") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Site + Group, scales="free_x") 
+
+```
+
+
+Plot relative abundance by genus level
+```{r}
+rel_abund_func_level(ps_LF, "Genus", 20)
+rel_abund_func_level(ps_ER, "Genus", 20)
+rel_abund_func_level(ps_AS, "Genus", 20)
+rel_abund_func_level(ps_RC, "Genus", 20)
+```
+
+
+
+```{r}
+# how to compare increasingness
+plot_bar(ps.top20, x="Description", fill="Genus") +
+    geom_point(size = 2) +
+  geom_line() +
+  facet_wrap(~Site, scales="free_x") 
+```
+
+```{r}
+mdf <-  psmelt(ps.top20)
+p <- ggplot(mdf, aes_string(x = "Week", y = "Abundance", color = "Genus")) +
+  geom_point(size = 2) +
+  geom_line() +
+  facet_wrap(~Site, scales="free_x")
+p
+```
+
+## Permanova
+
+Don't need to prune because all samples have large counts
+```{r}
+sample_sums(poly.new.ps) %>% sort
+```
+```{r}
+min_count = 3
+min_sample = 2
+
+prune.vec = filter_taxa(poly.new.ps, 
+                       function(x) sum(x >= min_count) >= min_sample)
+sum(prune.vec)
+```
+
+Transform to even sampling depth
+```{r}
+ps_even = transform_sample_counts(poly.new.ps, function(x) 1E6 * x/sum(x))
+
+ps.st_prune.even = prune_taxa(prune.vec, ps_even)
+ntaxa(ps.st_prune.even)
+```
+```{r}
+# plot_bar(ps.st_prune.even)
+```
+
+We want to see if there are differences in microbial communities by sites and groups. A permanova analysis allows us to quantify this.
+```{r}
+ps.st_prune.even %>%
+  sample_data %>%
+  as("data.frame") ->
+  ps.st_prune.even.metadata
+```
+
+```{r}
+ps.st_prune.even %>%
+  distance(method="bray") ->
+  ps.st_prune.even.bray
+
+```
+
+Permanova by Site and Group
+```{r}
+adonis(ps.st_prune.even.bray ~ Site + Group,
+       data = ps.st_prune.even.metadata) ->
+  site_adonis
+
+print(site_adonis)
+```
+
+Permanova by group
+
+
+# Session Info
+Always print `sessionInfo` for reproducibility!
+```{r}
+sessionInfo()
+```
+
