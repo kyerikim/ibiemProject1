@@ -128,7 +128,9 @@ plot_bar(ps.top20, x="Week", fill= level) +
 
 ```{r}
 rel_abund_func(ps_LF, "Family", 20)
-rel_abund_func(ps_ER, "Family", 20)
+rel_abund_func(ps_ER, "Family", 20) +
+  theme(legend.text  = element_text(size = 8),
+        legend.key.size = unit(.6, "cm"))
 rel_abund_func(ps_AS, "Family", 20)
 rel_abund_func(ps_RC, "Family", 20)
 ```
