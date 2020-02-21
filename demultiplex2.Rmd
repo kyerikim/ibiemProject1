@@ -1,0 +1,215 @@
+---
+title: "Demultiplex with labeled map file"
+subtitle: "Splitting up is hard to do."
+author: kyeri kim
+output:
+  html_document:
+    df_print: paged
+---
+
+# Setup
+## Load Libraries
+```{r}
+library(readr)
+library(fs)
+library(R.utils)
+```
+
+## Paths, Directories, and Shell Variables
+To keep the code readable and portable, it is nice to assign paths to variables.  I recommend assigning all the paths that you will need to R variables, then using that the R `Sys.setenv` command to make shell variables that are accessible in the bash chunks from the R variables.
+
+```{r}
+data.dir = "/home/guest/project1_ibiem/rawdata/argonne_data"
+output.dir = path.expand("/home/guest/project1_ibiem/demultiplexed2")
+demux.dir = file.path(output.dir, "demux_all")
+demux.our.dir = file.path(output.dir, "demux_our")
+dir.create(demux.dir, recursive = TRUE)
+
+#map.file = file.path(data.dir,"200114_McCumber_16SFW_AS_200110.txt")
+#map.file = file.path(data.dir,"200114_McCumber_16SFW_AS_200110_ver2.txt")
+map.file = file.path(data.dir,"200114_McCumber_16SFW_AS_200110_ver3.txt")
+barcode.fastq = file.path(data.dir,"Undetermined_S0_L001_I1_001.fastq.gz")
+r1.fastq = file.path(data.dir,"Undetermined_S0_L001_R1_001.fastq.gz")
+r2.fastq = file.path(data.dir,"Undetermined_S0_L001_R2_001.fastq.gz")
+
+Sys.setenv(RAW_FASTQ_DIR = data.dir)
+Sys.setenv(MAP_FILE = map.file)
+Sys.setenv(OUT_DIR = output.dir) 
+Sys.setenv(DEMUX_DIR = demux.dir)
+Sys.setenv(BARCODE_FASTQ = barcode.fastq)
+Sys.setenv(R1_FASTQ = r1.fastq)
+Sys.setenv(R2_FASTQ = r2.fastq)
+```
+
+
+## Check Data Integrity
+Run `md5sum` on the raw data to be sure there has been no data loss or corruption.  The md5 checksum file is in the same directory as the FASTQs and map file.
+
+%%%% Kyeri: I changed map file so it gives error for that. I will skip this part. 
+```{bash}
+cd $RAW_FASTQ_DIR
+
+```
+md5sum -c md5_checksum_compressed_fastqs.txt
+
+# Assemble Metadata Table (Map)
+
+## Check  Map File
+QIIME is inflexible about map file formatting.  Fortunately, QIIME includes the 
+[validate_mapping_file.py](http://qiime.org/scripts/validate_mapping_file.html)
+script that checks your map file to see if the format meets its specifications.  Unfortunately the script is not very robust, so incorrectly formated map files sometimes make it crash without giving a useful error message.  Let's run it anyway on the map file to be sure that the QIIME scripts won't choke on it.
+
+
+```{bash}
+validate_mapping_file.py -m $MAP_FILE -o $OUT_DIR/validate_mapfile
+```
+Once you have run `validate_mapping_file.py` you can view the report through RStudio:
+
+  1. In the *Files* pane, Navigate to `r file.path(output.dir, "validate_mapfile")`
+  2. Click on `sample_metadata.tsv.html` and select *View in Web Browser*
+  3. Look around the output! How does it look?
+
+## Examine Metadata Table (Map)
+In the chunk below you should load the map file into a dataframe, then print the first six rows of the dataframe.
+```{r}
+meta.df = read_tsv(map.file)
+head(meta.df)
+```
+
+
+
+# Demultiplexing
+
+## Running split_libraries_fastq.py
+Start off running split_libraries_fastq.py on the R1 FASTQ
+```{bash}
+set -u
+TAGDIR=$DEMUX_DIR/tagged_4
+split_libraries_fastq.py -r 999 -n 999 -q 0 -p 0.0001 \
+		--sequence_read_fps $R1_FASTQ \
+		--output_dir $TAGDIR \
+		--barcode_read_fps $BARCODE_FASTQ \
+		--mapping_fps $MAP_FILE \
+		--phred_offset 33 \
+		--barcode_type golay_12 \
+		--rev_comp_barcode \
+		--rev_comp_mapping_barcodes \
+		--store_demultiplexed_fastq \
+		--retain_unassigned_reads
+```
+
+Now verify that most of the reads are demultiplexed to a specific sample
+```{bash}
+ls $DEMUX_DIR/tagged_4/
+cat $DEMUX_DIR/tagged_4/histograms.txt
+cat $DEMUX_DIR/tagged_4/split_library_log.txt
+```
+
+
+
+## Running `split_sequence_file_on_sample_ids.py`
+Now let's run `split_sequence_file_on_sample_ids.py` to actually do the demultiplexing
+
+```{bash}
+TAGDIR=$DEMUX_DIR/tagged_4
+SPLITDIR=$DEMUX_DIR/split_4
+split_sequence_file_on_sample_ids.py --input_seqs_fp $TAGDIR/seqs.fastq \
+					 --file_type fastq \
+					 --output_dir $SPLITDIR
+					 
+```
+
+Now let's check that it worked
+```{bash}
+ls -lSrh $DEMUX_DIR/split_4
+```
+You should see FASTQs ranging in size from about 36kb to 90kb, plus a small `Unassigned.fastq`
+
+## Putting it together for R1 and R2
+Now that we have everything tested, let's put it together:
+
+1. Run `split_libraries_fastq.py` on both R1 and R2 (We can drop "--retain_unassigned_reads" since we have already reviewed the results.)
+2. Run `split_sequence_file_on_sample_ids.py` on the results of `split_libraries_fastq.py`
+3. Do a little cleanup: get rid of the output of `split_libraries_fastq.py` once we have demuxed it since we don't need it anymore.
+```{bash}
+set -u
+for CURREAD in "Undetermined_S0_L001_R1_001" "Undetermined_S0_L001_R2_001"
+do
+   CURREAD_DIR=$DEMUX_DIR/${CURREAD}
+   TAGDIR=$CURREAD_DIR/tagged
+    split_libraries_fastq.py -r 999 -n 999 -q 0 -p 0.0001 \
+        --sequence_read_fps $RAW_FASTQ_DIR/${CURREAD}.fastq.gz \
+        --output_dir $TAGDIR \
+        --barcode_read_fps $BARCODE_FASTQ \
+        --mapping_fps $MAP_FILE \
+        --phred_offset 33 \
+        --barcode_type golay_12 \
+        --rev_comp_barcode \
+        --rev_comp_mapping_barcodes \
+        --store_demultiplexed_fastq 
+
+        
+    split_sequence_file_on_sample_ids.py --input_seqs_fp $TAGDIR/seqs.fastq \
+                     --file_type fastq \
+                     --output_dir $CURREAD_DIR
+                     
+    rm -rf $TAGDIR
+done
+
+```
+
+Let's see if that worked by listing the contents of the directory that we demultiplexed into.
+```{bash}
+ls $DEMUX_DIR/
+```
+
+There should be an R1 directory with all the demultiplexed R1 FASTQs and an R2 directory with all the demultiplexed R2 FASTQs.  Let's check to be sure we see all the FASTQs
+
+```{bash}
+ls $DEMUX_DIR/Undetermined_S0_L001_R*
+```
+
+The demuxed R1 reads are in the `R1` directory and the demuxed reverse reads should be in the `R2` directory.  We are ready for DADA2!
+
+
+## Bonus: Rename, move, and gzip the split FASTQs
+*This part is an optional bonus.  You do not need to do it to get full credit for this assignment.*
+
+Sometimes it is less confusing to put all the demuxed FASTQs in the same directory.  Right now the R1 and R2 FASTQs for each sample have the same name.  If you combined them now into the same directory, one of the pair will overwrite the other.  You should do is (not necessarily in this order):
+
+1. Rename FASTQs by adding "R1" or "R2" to the sample name. 
+2. Move the renamed FASTQs into the same directory
+3. `gzip` the renamed FASTQs, since keeping FASTQs uncompressed just wastes a bunch of space
+
+You *need* to do this with code, it is too easy to mess up if you try to do it by hand!
+```{r}
+for (curread in c("Undetermined_S0_L001_R1_001", "Undetermined_S0_L001_R2_001")){
+  curpath = file.path(demux.dir,curread)
+  print(curpath)
+  for (fastq_path in list.files(curpath, full.names = TRUE, pattern = ".fastq")){
+    print(fastq_path)
+    new_path = path_ext_remove(fastq_path)
+    print(new_path)
+    new_path = path_file(new_path)
+    print(new_path)
+    new_path = path(demux.dir, new_path, ext=paste0(curread,".fastq.gz"))
+    print(new_path)
+    gzip(fastq_path, new_path)
+  }
+}
+```
+
+Now check your work by listing the contents of the directory that contains the gzipped R1 and R2 FASTQs
+```{r check_combined}{r}
+list.files(demux.dir)
+```
+
+```{r}
+
+```
+
+# Session Info
+Always print `sessionInfo` for reproducibility!
+```{R}
+sessionInfo()
+```

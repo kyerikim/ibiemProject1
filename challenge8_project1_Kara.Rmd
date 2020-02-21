@@ -114,8 +114,8 @@ ps_RC <- subset_samples(poly.new.ps, Site == "RC")
 
 ```{r}
 # landfill relative abundance plot
-rel_abund_func <- function(ps, level){
-  top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+rel_abund_func <- function(ps, level, top){
+  top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:top]
 ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
 ps.top20<- prune_taxa(top20, ps.top20)
 
@@ -123,13 +123,14 @@ plot_bar(ps.top20, x="Week", fill= level) +
   geom_bar(stat = "identity", position = "stack", size=0) +
   facet_wrap(~Group, scales="free_x") 
 }
+
 ```
 
 ```{r}
-rel_abund_func(ps_LF, "Family")
-rel_abund_func(ps_ER, "Family")
-rel_abund_func(ps_AS, "Family")
-rel_abund_func(ps_RC, "Family")
+rel_abund_func(ps_LF, "Family", 20)
+rel_abund_func(ps_ER, "Family", 20)
+rel_abund_func(ps_AS, "Family", 20)
+rel_abund_func(ps_RC, "Family", 20)
 ```
 
 Plot richness using Shannon
@@ -163,7 +164,7 @@ plot_bar(ps.top20, fill = "Family") +
   labs(y = "Relative Abundance")
 
 # facet by site and group
-plot_bar(ps.top20, x="Description", fill="Family") + 
+plot_bar(ps.top20, x="Week", fill="Family") + 
   geom_bar(stat = "identity", position = "stack", size=0) +
   facet_wrap(~Site + Group, scales="free_x") 
 
@@ -172,10 +173,10 @@ plot_bar(ps.top20, x="Description", fill="Family") +
 
 Plot relative abundance by genus level
 ```{r}
-rel_abund_func_level(ps_LF, "Genus")
-rel_abund_func_level(ps_ER, "Genus")
-rel_abund_func_level(ps_AS, "Genus")
-rel_abund_func_level(ps_RC, "Genus")
+rel_abund_func_level(ps_LF, "Genus", 20)
+rel_abund_func_level(ps_ER, "Genus", 20)
+rel_abund_func_level(ps_AS, "Genus", 20)
+rel_abund_func_level(ps_RC, "Genus", 20)
 ```
 
 
