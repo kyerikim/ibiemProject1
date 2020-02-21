@@ -15,9 +15,168 @@ library(phyloseq)
 library(ggplot2)
 library(dplyr)
 library(stringr)
+## Load Libraries
+
+library(readr)
+library(phyloseq)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(magrittr)
 ```
+
+
 
 ## Define Paths
 ```{r}
 polystyrene ="/sharedspace/polystyrene/demultiplexed/dada2/ibiemProject1_subset.rds"
+```
+
+```{r}
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+# save sample data as a data frame
+df <- sample_data(poly.ps)
+
+week <- NULL
+collectionID <- NULL
+site <- NULL
+group <- NULL
+
+# create week and collectionID variables
+for(i in 1:nrow(sample_data(poly.ps))){
+  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
+}
+
+# create site variable
+site[collectionID %in% 1:4] <- "LF"
+site[collectionID %in% 5:8] <- "ER"
+site[collectionID %in% 9:12] <- "AS"
+site[collectionID %in% 13:16] <- "RC"
+
+# create group variable 
+group[mod(collectionID, 4) == 1] <- "PS"
+group[mod(collectionID, 4) == 2] <- "S"
+group[mod(collectionID, 4) == 3] <- "PSS"
+group[mod(collectionID, 4) == 0] <- "C"
+
+# add new variables to dataset
+df$Week <- as.numeric(week)
+df$Site <- site
+df$Group <- group
+
+# here is the new sample_data
+df
+
+```
+
+Add newly created sample_data file to phyloseq object
+```{r}
+poly.new.ps <- phyloseq(otu_table(poly.ps),
+               df,
+               tax_table(poly.ps))
+
+```
+
+
+Add newly created sample_data file to phyloseq object
+```{r}
+poly.new.ps <- phyloseq(otu_table(poly.ps),
+               df,
+               tax_table(poly.ps))
+
+```
+
+Subset by LF
+```{r}
+ps_LF <- subset_samples(poly.new.ps, Site == "LF")
+ps_ER <- subset_samples(poly.new.ps, Site == "ER")
+ps_AS <- subset_samples(poly.new.ps, Site == "AS")
+ps_RC <- subset_samples(poly.new.ps, Site == "RC")
+
+```
+
+```{r}
+# landfill relative abundance plot top 20% 
+rel_abund_func <- function(ps){
+  top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
+ps.top20<- prune_taxa(top20, ps.top20)
+
+plot_bar(ps.top20, x="Week", fill="Family") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Group, scales="free_x") 
+}
+
+rel_abund_func(ps_LF)
+
+str(otu_table(ps_LF))
+rel_abund_func(ps_ER)
+rel_abund_func(ps_AS)
+rel_abund_func(ps_RC)
+```
+
+
+```{r}
+# landfill relative abundance plot entire community 
+
+plot_bar(ps_LF, x="Week", fill="Family") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Group, scales="free_x") 
+
+```
+
+```{r}
+ggsave("LF100_Class.png", plot = last_plot(), scale = 1, width = 49, height =8.5, units = "in")
+```
+
+```{r}
+# landfill relative abundance plot entire community 
+
+plot_bar(ps_LF, x="Week", fill="Class") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Group, scales="free_x") 
+
+ggsave("LF100_Class.png", plot = last_plot(), scale = 1, width = 49, height =8.5, units = "in")
+```
+
+```{r}
+
+str(otu_table(ps_LF))
+rel_abund_func(ps_ER)
+rel_abund_func(ps_AS)
+rel_abund_func(ps_RC)
+```
+
+
+
+
+
+
+```{r}
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + theme_bw() +
+  facet_wrap(~Site)
+```
+
+```{r}
+# simpson
+plot_richness(poly.new.ps, x="Week", measures=c("Simpson"), color="Group") + theme_bw() +
+  facet_wrap(~Site)
+```
+
+```{r}
+## abundance 
+top20 <- names(sort(taxa_sums(poly.new.ps), decreasing=TRUE))[1:20]
+ps.top20 <- transform_sample_counts(poly.new.ps, function(OTU) OTU/sum(OTU))
+ps.top20 <- prune_taxa(top20, ps.top20)
+
+plot_bar(ps.top20, x="Week", fill="Family") + 
+  geom_bar(stat = "identity", position = "stack", size=0) +
+  facet_wrap(~Site + Group, scales="free_x") 
+ggsave("landfilltest.png", plot = last_plot(), scale = 1, width = 8, height = 11, units = c("in", "cm", "mm"))
 ```
