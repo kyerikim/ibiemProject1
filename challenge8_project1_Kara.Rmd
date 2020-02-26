@@ -46,7 +46,7 @@ library(vegan)
 
 ## Define Paths
 ```{r}
-poly.rds ="/sharedspace/polystyrene/demultiplexed/dada2/ibiemProject1_subset.rds"
+poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
 ```
 
 ## Check Phyloseq RDS
@@ -285,6 +285,7 @@ print(site_adonis)
 
 permanova_fun(ps_LF, min_count = 3, min_sample = 2)
 ```
+
 
 
 
