@@ -254,13 +254,17 @@ Permanova by group
 
 Landfill:
 ```{r}
-min_count = 3
-min_sample = 2
+# create permanova function
+# inputs:
+#   - phyloseq object
+#   - min_count
+#   - min_sample
 
-prune.vec = filter_taxa(ps_LF, 
+permanova_fun <- function(ps, min_count = 3, min_sample = 2){
+  prune.vec = filter_taxa(ps, 
                        function(x) sum(x >= min_count) >= min_sample)
-sum(prune.vec)
-ps_even_LF = transform_sample_counts(ps_LF, function(x) 1E6 * x/sum(x))
+# sum(prune.vec)
+ps_even_LF = transform_sample_counts(ps, function(x) 1E6 * x/sum(x))
 ps.st_prune.even_LF = prune_taxa(prune.vec, ps_even_LF)
 
 ps.st_prune.even_LF %>%
@@ -274,9 +278,12 @@ ps.st_prune.even_LF %>%
 
 adonis(ps.st_prune.even.bray_LF ~ Group,
        data = ps.st_prune.even.metadata_LF) ->
-  site_adonis_LF
+  site_adonis
 
-print(site_adonis_LF)
+print(site_adonis)
+}
+
+permanova_fun(ps_LF, min_count = 3, min_sample = 2)
 ```
 
 
