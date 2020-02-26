@@ -59,56 +59,60 @@ print(poly.ps)
 ```{r}
 # save sample data as a data frame
 df <- sample_data(poly.ps)
+head(df)
 
-week <- NULL
-collectionID <- NULL
-site <- NULL
-group <- NULL
+```
 
-# create week and collectionID variables
-for(i in 1:nrow(sample_data(poly.ps))){
-  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
-  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
-}
-
-# create site variable
-site[collectionID %in% 1:4] <- "LF"
-site[collectionID %in% 5:8] <- "ER"
-site[collectionID %in% 9:12] <- "AS"
-site[collectionID %in% 13:16] <- "RC"
-
-# create group variable 
-group[mod(collectionID, 4) == 1] <- "PS"
-group[mod(collectionID, 4) == 2] <- "S"
-group[mod(collectionID, 4) == 3] <- "PSS"
-group[mod(collectionID, 4) == 0] <- "C"
-
-# add new variables to dataset
-df$Week <- as.numeric(week)
-df$Site <- site
-df$Group <- group
-
-# here is the new sample_data
-df
-df %>%
-  select(Description, Week, Site, Group)
+```{r}
+# week <- NULL
+# collectionID <- NULL
+# site <- NULL
+# group <- NULL
+# 
+# # create week and collectionID variables
+# for(i in 1:nrow(sample_data(poly.ps))){
+#   week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+#   collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
+# }
+# 
+# # create site variable
+# site[collectionID %in% 1:4] <- "LF"
+# site[collectionID %in% 5:8] <- "ER"
+# site[collectionID %in% 9:12] <- "AS"
+# site[collectionID %in% 13:16] <- "RC"
+# 
+# # create group variable 
+# group[mod(collectionID, 4) == 1] <- "PS"
+# group[mod(collectionID, 4) == 2] <- "S"
+# group[mod(collectionID, 4) == 3] <- "PSS"
+# group[mod(collectionID, 4) == 0] <- "C"
+# 
+# # add new variables to dataset
+# df$Week <- as.numeric(week)
+# df$Site <- site
+# df$Group <- group
+# 
+# # here is the new sample_data
+# df
+# df %>%
+#   select(Description, Week, Site, Group)
 
 ```
 
 Add newly created sample_data file to phyloseq object
 ```{r}
-poly.new.ps <- phyloseq(otu_table(poly.ps),
-               df,
-               tax_table(poly.ps))
+# poly.new.ps <- phyloseq(otu_table(poly.ps),
+#                df,
+#                tax_table(poly.ps))
 
 ```
 
 Subset by LF
 ```{r}
-ps_LF <- subset_samples(poly.new.ps, Site == "LF")
-ps_ER <- subset_samples(poly.new.ps, Site == "ER")
-ps_AS <- subset_samples(poly.new.ps, Site == "AS")
-ps_RC <- subset_samples(poly.new.ps, Site == "RC")
+ps_LF <- subset_samples(poly.ps, Location == "LF")
+ps_ER <- subset_samples(poly.ps, Location == "ER")
+ps_AS <- subset_samples(poly.ps, Location == "AS")
+ps_RC <- subset_samples(poly.ps, Location == "RC")
 
 ```
 
@@ -121,7 +125,7 @@ ps.top20<- prune_taxa(top20, ps.top20)
 
 plot_bar(ps.top20, x="Week", fill= level) + 
   geom_bar(stat = "identity", position = "stack", size=0) +
-  facet_wrap(~Group, scales="free_x") 
+  facet_wrap(~Condition, scales="free_x") 
 }
 
 ```
@@ -137,7 +141,7 @@ rel_abund_func(ps_RC, "Family", 20)
 
 Plot richness using Shannon
 ```{r}
-plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + 
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Condition") + 
   theme_bw() +
   facet_wrap(~Site)
 ```
