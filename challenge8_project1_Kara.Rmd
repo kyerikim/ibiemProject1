@@ -46,7 +46,7 @@ library(vegan)
 
 ## Define Paths
 ```{r}
-poly.rds ="/sharedspace/polystyrene/demultiplexed/dada2/ibiemProject1_subset.rds"
+poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
 ```
 
 ## Check Phyloseq RDS
@@ -59,56 +59,60 @@ print(poly.ps)
 ```{r}
 # save sample data as a data frame
 df <- sample_data(poly.ps)
+head(df)
 
-week <- NULL
-collectionID <- NULL
-site <- NULL
-group <- NULL
+```
 
-# create week and collectionID variables
-for(i in 1:nrow(sample_data(poly.ps))){
-  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
-  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
-}
-
-# create site variable
-site[collectionID %in% 1:4] <- "LF"
-site[collectionID %in% 5:8] <- "ER"
-site[collectionID %in% 9:12] <- "AS"
-site[collectionID %in% 13:16] <- "RC"
-
-# create group variable 
-group[mod(collectionID, 4) == 1] <- "PS"
-group[mod(collectionID, 4) == 2] <- "S"
-group[mod(collectionID, 4) == 3] <- "PSS"
-group[mod(collectionID, 4) == 0] <- "C"
-
-# add new variables to dataset
-df$Week <- as.numeric(week)
-df$Site <- site
-df$Group <- group
-
-# here is the new sample_data
-df
-df %>%
-  select(Description, Week, Site, Group)
+```{r}
+# week <- NULL
+# collectionID <- NULL
+# site <- NULL
+# group <- NULL
+# 
+# # create week and collectionID variables
+# for(i in 1:nrow(sample_data(poly.ps))){
+#   week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+#   collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
+# }
+# 
+# # create site variable
+# site[collectionID %in% 1:4] <- "LF"
+# site[collectionID %in% 5:8] <- "ER"
+# site[collectionID %in% 9:12] <- "AS"
+# site[collectionID %in% 13:16] <- "RC"
+# 
+# # create group variable 
+# group[mod(collectionID, 4) == 1] <- "PS"
+# group[mod(collectionID, 4) == 2] <- "S"
+# group[mod(collectionID, 4) == 3] <- "PSS"
+# group[mod(collectionID, 4) == 0] <- "C"
+# 
+# # add new variables to dataset
+# df$Week <- as.numeric(week)
+# df$Site <- site
+# df$Group <- group
+# 
+# # here is the new sample_data
+# df
+# df %>%
+#   select(Description, Week, Site, Group)
 
 ```
 
 Add newly created sample_data file to phyloseq object
 ```{r}
-poly.new.ps <- phyloseq(otu_table(poly.ps),
-               df,
-               tax_table(poly.ps))
+# poly.new.ps <- phyloseq(otu_table(poly.ps),
+#                df,
+#                tax_table(poly.ps))
 
 ```
 
 Subset by LF
 ```{r}
-ps_LF <- subset_samples(poly.new.ps, Site == "LF")
-ps_ER <- subset_samples(poly.new.ps, Site == "ER")
-ps_AS <- subset_samples(poly.new.ps, Site == "AS")
-ps_RC <- subset_samples(poly.new.ps, Site == "RC")
+ps_LF <- subset_samples(poly.ps, Location == "LF")
+ps_ER <- subset_samples(poly.ps, Location == "ER")
+ps_AS <- subset_samples(poly.ps, Location == "AS")
+ps_RC <- subset_samples(poly.ps, Location == "RC")
 
 ```
 
@@ -121,7 +125,7 @@ ps.top20<- prune_taxa(top20, ps.top20)
 
 plot_bar(ps.top20, x="Week", fill= level) + 
   geom_bar(stat = "identity", position = "stack", size=0) +
-  facet_wrap(~Group, scales="free_x") 
+  facet_wrap(~Condition, scales="free_x") 
 }
 
 ```
@@ -137,7 +141,7 @@ rel_abund_func(ps_RC, "Family", 20)
 
 Plot richness using Shannon
 ```{r}
-plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Group") + 
+plot_richness(poly.new.ps, x="Week", measures=c("Shannon"), color="Condition") + 
   theme_bw() +
   facet_wrap(~Site)
 ```
@@ -175,10 +179,10 @@ plot_bar(ps.top20, x="Week", fill="Family") +
 
 Plot relative abundance by genus level
 ```{r}
-rel_abund_func_level(ps_LF, "Genus", 20)
-rel_abund_func_level(ps_ER, "Genus", 20)
-rel_abund_func_level(ps_AS, "Genus", 20)
-rel_abund_func_level(ps_RC, "Genus", 20)
+rel_abund_func(ps_LF, "Genus", 20)
+rel_abund_func(ps_ER, "Genus", 20)
+rel_abund_func(ps_AS, "Genus", 20)
+rel_abund_func(ps_RC, "Genus", 20)
 ```
 
 
@@ -254,13 +258,17 @@ Permanova by group
 
 Landfill:
 ```{r}
-min_count = 3
-min_sample = 2
+# create permanova function
+# inputs:
+#   - phyloseq object
+#   - min_count
+#   - min_sample
 
-prune.vec = filter_taxa(ps_LF, 
+permanova_fun <- function(ps, min_count = 3, min_sample = 2){
+  prune.vec = filter_taxa(ps, 
                        function(x) sum(x >= min_count) >= min_sample)
-sum(prune.vec)
-ps_even_LF = transform_sample_counts(ps_LF, function(x) 1E6 * x/sum(x))
+# sum(prune.vec)
+ps_even_LF = transform_sample_counts(ps, function(x) 1E6 * x/sum(x))
 ps.st_prune.even_LF = prune_taxa(prune.vec, ps_even_LF)
 
 ps.st_prune.even_LF %>%
@@ -274,10 +282,14 @@ ps.st_prune.even_LF %>%
 
 adonis(ps.st_prune.even.bray_LF ~ Group,
        data = ps.st_prune.even.metadata_LF) ->
-  site_adonis_LF
+  site_adonis
 
-print(site_adonis_LF)
+print(site_adonis)
+}
+
+permanova_fun(ps_LF, min_count = 3, min_sample = 2)
 ```
+
 
 
 
