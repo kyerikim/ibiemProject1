@@ -1,0 +1,15 @@
+INFO [2020-02-27 05:54:08] $x
+INFO [2020-02-27 05:54:08] list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders, RC_Ctrl_Degraders)
+INFO [2020-02-27 05:54:08] 
+INFO [2020-02-27 05:54:08] $category.names
+INFO [2020-02-27 05:54:08] c("PSS", "PS", "S", "Ctrl")
+INFO [2020-02-27 05:54:08] 
+INFO [2020-02-27 05:54:08] $main
+INFO [2020-02-27 05:54:08] [1] "RC"
+INFO [2020-02-27 05:54:08] 
+INFO [2020-02-27 05:54:08] $filename
+INFO [2020-02-27 05:54:08] [1] "KYERI_Img/#RC_venn_diagramm.png"
+INFO [2020-02-27 05:54:08] 
+INFO [2020-02-27 05:54:08] $output
+INFO [2020-02-27 05:54:08] [1] TRUE
+INFO [2020-02-27 05:54:08] 

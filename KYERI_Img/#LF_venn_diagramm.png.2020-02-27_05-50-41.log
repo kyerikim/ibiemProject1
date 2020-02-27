@@ -1,0 +1,15 @@
+INFO [2020-02-27 05:50:41] $x
+INFO [2020-02-27 05:50:41] list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders, LF_Ctrl_Degraders)
+INFO [2020-02-27 05:50:41] 
+INFO [2020-02-27 05:50:41] $category.names
+INFO [2020-02-27 05:50:41] c("PSS", "PS", "S", "Ctrl")
+INFO [2020-02-27 05:50:41] 
+INFO [2020-02-27 05:50:41] $main
+INFO [2020-02-27 05:50:41] [1] "LF"
+INFO [2020-02-27 05:50:41] 
+INFO [2020-02-27 05:50:41] $filename
+INFO [2020-02-27 05:50:41] [1] "KYERI_Img/#LF_venn_diagramm.png"
+INFO [2020-02-27 05:50:41] 
+INFO [2020-02-27 05:50:41] $output
+INFO [2020-02-27 05:50:41] [1] TRUE
+INFO [2020-02-27 05:50:41] 

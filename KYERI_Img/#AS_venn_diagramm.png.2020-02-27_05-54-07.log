@@ -1,0 +1,15 @@
+INFO [2020-02-27 05:54:07] $x
+INFO [2020-02-27 05:54:07] list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders, AS_Ctrl_Degraders)
+INFO [2020-02-27 05:54:07] 
+INFO [2020-02-27 05:54:07] $category.names
+INFO [2020-02-27 05:54:07] c("PSS", "PS", "S", "Ctrl")
+INFO [2020-02-27 05:54:07] 
+INFO [2020-02-27 05:54:07] $main
+INFO [2020-02-27 05:54:07] [1] "AS"
+INFO [2020-02-27 05:54:07] 
+INFO [2020-02-27 05:54:07] $filename
+INFO [2020-02-27 05:54:07] [1] "KYERI_Img/#AS_venn_diagramm.png"
+INFO [2020-02-27 05:54:07] 
+INFO [2020-02-27 05:54:07] $output
+INFO [2020-02-27 05:54:07] [1] TRUE
+INFO [2020-02-27 05:54:07] 
