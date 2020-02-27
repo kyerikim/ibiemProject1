@@ -1,0 +1,82 @@
+---
+title: "Ordination-heatmap"
+author: "Yiwei"
+date: "2/27/2020"
+output: html_document
+---
+```{r}
+library(readr)
+library(phyloseq)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(magrittr)
+library(vegan)
+```
+
+
+## Define Paths
+```{r}
+poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
+```
+
+## Check Phyloseq RDS
+Load your phyloseq RDS and `print` it just to be sure things look sane
+```{r}
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+# save sample data as a data frame
+df <- sample_data(poly.ps)
+
+week <- NULL
+collectionID <- NULL
+site <- NULL
+group <- NULL
+
+# create week and collectionID variables
+for(i in 1:nrow(sample_data(poly.ps))){
+  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
+  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
+}
+
+# create site variable
+site[collectionID %in% 1:4] <- "LF"
+site[collectionID %in% 5:8] <- "ER"
+site[collectionID %in% 9:12] <- "AS"
+site[collectionID %in% 13:16] <- "RC"
+
+# create group variable 
+group[mod(collectionID, 4) == 1] <- "PS"
+group[mod(collectionID, 4) == 2] <- "S"
+group[mod(collectionID, 4) == 3] <- "PSS"
+group[mod(collectionID, 4) == 0] <- "C"
+
+# add new variables to dataset
+df$Week <- as.numeric(week)
+df$Site <- site
+df$Group <- group
+
+# here is the new sample_data
+df
+df %>%
+  select(Description, Week, Site, Group)
+
+```
+
+```{r}
+poly.new.ps <- phyloseq(otu_table(poly.ps),
+               df,
+               tax_table(poly.ps))
+```
+
+```{r}
+ps_LF <- subset_samples(poly.ps, Location == "LF")
+ps_ER <- subset_samples(poly.ps, Location == "ER")
+ps_AS <- subset_samples(poly.ps, Location == "AS")
+ps_RC <- subset_samples(poly.ps, Location == "RC")
+
+```
