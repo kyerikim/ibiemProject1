@@ -229,7 +229,11 @@ intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
 
 
 ```{r}
-Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders))
+Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders)) ->a
+
+```
+```{r}
+Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders))
 ```
 
 
