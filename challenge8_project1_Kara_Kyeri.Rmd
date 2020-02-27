@@ -154,7 +154,7 @@ rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
 ```{r}
 #"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
 standardweek <-1
-threshold = 0.01
+threshold = 0.005
 i = 0
 for (loc_ps in c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)){
   i = i+1
@@ -190,13 +190,48 @@ LF_S_Plot
 LF_Ctrl_Plot
 ```
 ```{r}
-paste("AS", "Degraders", sep = "_") <<- c(1:10)
+# install.packages("VennDiagram")
+library(VennDiagram)
+
+# Chart
+venn.diagram(
+  x = list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders, LF_Ctrl_Degraders),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "LF",
+  filename = 'KYERI_Img/#LF_venn_diagramm.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders, AS_Ctrl_Degraders),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "AS",
+  filename = 'KYERI_Img/#AS_venn_diagramm.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders, RC_Ctrl_Degraders),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "RC",
+  filename = 'KYERI_Img/#RC_venn_diagramm.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders, ER_Ctrl_Degraders),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "ER",
+  filename = 'KYERI_Img/#ER_venn_diagramm.png',
+  output=TRUE
+)
+```
+```{r}
+intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
 ```
 
 
 ```{r}
-AS_Degraders
+Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders))
 ```
+
 
 
 
