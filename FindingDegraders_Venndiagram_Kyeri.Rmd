@@ -229,12 +229,17 @@ intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
 
 
 ```{r}
-Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders)) ->a
+aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders))
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_LF))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)
 
 ```
 ```{r}
-Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders))
+aa<-Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders))
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)
 ```
+https://www.ebi.ac.uk/biomodels-main/path2models?about=205
 
 
 
