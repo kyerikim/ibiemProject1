@@ -45,22 +45,51 @@ ps_RC <- subset_samples(poly.ps, Location == "RC")
 ```
 
 
+```{r}
+ps.prop <- transform_sample_counts(poly.ps, function(otu) otu/sum(otu))
+ord.nmds.bray <- ordinate (poly.ps, method = "NMDS",distance="bray")
+plot_ordination(poly.ps,ord.nmds.bray, color="Location", title = "4 Site Ordination")
+ggsave("Ordination_sites.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
 
 ```{r}
-#ordination 
-ps.ord <- ordinate(poly.ps, "NMDS", "bray")
-p2=plot_ordination(poly.ps, ps.ord, type = "taxa", color= "Location")
-print(p2)
+ps_LF.prop <- transform_sample_counts(ps_LF, function(otu) otu/sum(otu))
+ord.nmds.bray.LF <- ordinate (ps_LF, method = "NMDS",distance="bray")
+plot_ordination(ps_LF,ord.nmds.bray.LF, color="Condition", title = "Site_LF Ordination")
+ggsave("Ordination_LF.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+```{r}
+ps_AS.prop <- transform_sample_counts(ps_AS, function(otu) otu/sum(otu))
+ord.nmds.bray.AS <- ordinate (ps_AS, method = "NMDS",distance="bray")
+plot_ordination(ps_AS,ord.nmds.bray.AS, color="Condition", title = "Site_AS Ordination")
+ggsave("Ordination_AS.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+
+```{r}
+ps_ER.prop <- transform_sample_counts(ps_ER, function(otu) otu/sum(otu))
+ord.nmds.bray.ER <- ordinate (ps_ER, method = "NMDS",distance="bray")
+plot_ordination(ps_ER,ord.nmds.bray.ER, color = "Week", shape = "Condition", title = "Site-ER Ordination")
+ggsave("Ordination_ER.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+
+```{r}
+ps_RC.prop <- transform_sample_counts(ps_RC, function(otu) otu/sum(otu))
+ord.nmds.bray.RC <- ordinate (ps_RC, method = "NMDS",distance="bray")
+plot_ordination(ps_RC,ord.nmds.bray.RC, color="Condition", title = "Site_RC Ordination")
+ggsave("Ordination_RC.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+
+```{r}
+plot_ordination(poly.ps, ordination(poly.ps))
 ```
 
 
 
-```{r}
-#ordination 
-ps_LF.ord <- ordinate(ps_LF, "NMDS", "bray")
-p1=plot_ordination(ps_LF, ps_LF.ord, type = "taxa", color = "Condition")
-print(p1)
-```
 
 
 
