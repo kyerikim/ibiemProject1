@@ -4,6 +4,8 @@ author: "Yiwei"
 date: "2/27/2020"
 output: html_document
 ---
+
+## Load Libraries
 ```{r}
 library(readr)
 library(phyloseq)
@@ -14,7 +16,6 @@ library(tidyr)
 library(magrittr)
 library(vegan)
 ```
-
 
 ## Define Paths
 ```{r}
@@ -31,48 +32,10 @@ print(poly.ps)
 ```{r}
 # save sample data as a data frame
 df <- sample_data(poly.ps)
-
-week <- NULL
-collectionID <- NULL
-site <- NULL
-group <- NULL
-
-# create week and collectionID variables
-for(i in 1:nrow(sample_data(poly.ps))){
-  week[i] <- strsplit(sample_data(poly.ps)$Description, "_")[[i]][1]
-  collectionID[i] <- as.numeric(strsplit(sample_data(poly.ps)$Description, "_")[[i]][2])
-}
-
-# create site variable
-site[collectionID %in% 1:4] <- "LF"
-site[collectionID %in% 5:8] <- "ER"
-site[collectionID %in% 9:12] <- "AS"
-site[collectionID %in% 13:16] <- "RC"
-
-# create group variable 
-group[mod(collectionID, 4) == 1] <- "PS"
-group[mod(collectionID, 4) == 2] <- "S"
-group[mod(collectionID, 4) == 3] <- "PSS"
-group[mod(collectionID, 4) == 0] <- "C"
-
-# add new variables to dataset
-df$Week <- as.numeric(week)
-df$Site <- site
-df$Group <- group
-
-# here is the new sample_data
-df
-df %>%
-  select(Description, Week, Site, Group)
-
+head(df)
 ```
 
-```{r}
-poly.new.ps <- phyloseq(otu_table(poly.ps),
-               df,
-               tax_table(poly.ps))
-```
-
+Subset by LF
 ```{r}
 ps_LF <- subset_samples(poly.ps, Location == "LF")
 ps_ER <- subset_samples(poly.ps, Location == "ER")
@@ -80,3 +43,42 @@ ps_AS <- subset_samples(poly.ps, Location == "AS")
 ps_RC <- subset_samples(poly.ps, Location == "RC")
 
 ```
+
+
+
+```{r}
+#ordination 
+ps.ord <- ordinate(poly.ps, "NMDS", "bray")
+p2=plot_ordination(poly.ps, ps.ord, type = "taxa", color= "Location")
+print(p2)
+```
+
+
+
+```{r}
+#ordination 
+ps_LF.ord <- ordinate(ps_LF, "NMDS", "bray")
+p1=plot_ordination(ps_LF, ps_LF.ord, type = "taxa", color = "Condition")
+print(p1)
+```
+
+
+
+```{r}
+ps_LF_Acidobacteria <- subset_taxa(ps_LF, Phylum == "Acidobacteria")
+ps_LF_Acidobacteria_pruned<- prune_taxa(names(sort(taxa_sums(ps_LF_Acidobacteria),TRUE)[1:300]), ps_LF_Acidobacteria)
+ps_LF_Acidobacteria_pruned
+
+```
+
+```{r}
+plot_heatmap(ps_LF_Acidobacteria_pruned, "NMDS", "bray", taxa.label = "Family", max.label=300)
+```
+
+```{r}
+pcoa_subset_biom(ps_LF, method = "PCoA", distance = "unifrac", samples,
+  color_category = NULL, shape_category = NULL, weighted = FALSE,
+  title = NULL, colors = NULL, shapes = NULL, seed = 100,
+  xrange = NULL, yrange = NULL)
+```
+
