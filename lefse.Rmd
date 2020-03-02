@@ -1,0 +1,129 @@
+---
+title: "Lefse"
+author: "Yiwei"
+date: "3/1/2020"
+output: html_document
+---
+
+```{r}
+library(readr)
+library(phyloseq)
+library(tibble)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(fs)
+```
+
+
+## Define Paths
+```{r}
+poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
+```
+
+## Check Phyloseq RDS
+Load your phyloseq RDS and `print` it just to be sure things look sane
+```{r}
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+# save sample data as a data frame
+df <- sample_data(poly.ps)
+head(df)
+```
+
+Subset by LF
+```{r}
+ps_LF <- subset_samples(poly.ps, Location == "LF")
+ps_ER <- subset_samples(poly.ps, Location == "ER")
+ps_AS <- subset_samples(poly.ps, Location == "AS")
+ps_RC <- subset_samples(poly.ps, Location == "RC")
+
+```
+
+```{r}
+df
+```
+
+```{r}
+# Directories
+
+if(exists("params") && 
+   !is.null(params[["poly_ps_rds"]])){
+  poly.ps.rds=params[["poly_ps_rds"]]
+} else {
+  poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
+}
+print(poly.ps.rds)
+## [1] "/data/tutorial_data/poly_1pct.rds"
+# poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
+outdir=path.expand("~/scratch/lefse")
+# lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
+
+
+
+poly.ps.rds %>%
+  path_file %>%
+  path_ext_remove %>%
+  path(outdir, .) ->
+  output_basename 
+lefse.input.file = path_ext_set(output_basename, ".tsv")
+```
+
+
+```{r}
+RepseqToTaxa <- function(df, poly.ps) {
+  tax.df = as.data.frame(tax_table(poly.ps)) %>%
+    rownames_to_column("repseq") %>%
+    mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
+    select(repseq, taxonomy)
+  
+  # need to preserve non-OTU column names (otherwise they get lost)
+  colname_match = match(names(df), tax.df$repseq)
+  cols_to_keep = which(is.na(colname_match))
+  colnames_to_keep = names(df)[cols_to_keep]
+  
+  # replace repseqs with taxonomies
+  names = tax.df$taxonomy[match(names(df), tax.df$repseq)]
+  # now reset the non-OTU column names
+  names(df)[cols_to_keep] = colnames_to_keep
+  return(df)
+}
+
+GenerateLefseOutput = function(poly.ps,output_columns,outfile){
+  if(length(output_columns)==1){
+    format.flags="-f c -u 1 -c 2"
+  }else if(length(output_columns)==2){
+    format.flags="-f c -u 1 -c 2 -s 3"
+  }else{
+    stop("output_columns must be a vector of length 1 or 2")
+  }
+  base_columns = c("SampleID","OTU","Abundance")
+  df = psmelt(poly.ps) %>% 
+    mutate(SampleID = str_replace(Sample, pattern="\\.", replacement="_")) %>%
+    mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
+    select(one_of(c(base_columns,output_columns))) %>%
+    spread(OTU, Abundance)
+  
+  RepseqToTaxa(df, poly.ps) %>%
+    write.table(file=outfile, 
+                sep="\t", quote = FALSE,
+                row.names = FALSE)
+  
+  return(format.flags)
+}
+```
+
+
+```{r}
+# format.flags = GenerateLefseOutput(poly.ps, c("Vegetation","TransectName"), lefse.input.file)
+grouping_parameter="Location"
+format.flags = GenerateLefseOutput(poly.ps, grouping_parameter, lefse.input.file)
+Sys.setenv(FORMAT_FLAGS=format.flags)
+```
+
+```{r}
+format_input.py $LEFSE_INPUT_FILE  "${BASENAME}.in" $FORMAT_FLAGS $NORMALIZATION  --output_table ${BASENAME}.tab
+```
