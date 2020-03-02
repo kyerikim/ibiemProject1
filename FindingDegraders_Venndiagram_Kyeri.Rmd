@@ -154,7 +154,7 @@ rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
 ```{r}
 #"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
 standardweek <-1
-threshold = 0.005
+threshold = 0
 i = 0
 for (loc_ps in c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)){
   i = i+1
@@ -198,47 +198,77 @@ venn.diagram(
   x = list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders, LF_Ctrl_Degraders),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "LF",
-  filename = 'KYERI_Img/#LF_venn_diagramm.png',
+  filename = 'KYERI_Img/#LF_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
   x = list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders, AS_Ctrl_Degraders),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "AS",
-  filename = 'KYERI_Img/#AS_venn_diagramm.png',
+  filename = 'KYERI_Img/#AS_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
   x = list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders, RC_Ctrl_Degraders),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "RC",
-  filename = 'KYERI_Img/#RC_venn_diagramm.png',
+  filename = 'KYERI_Img/#RC_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
   x = list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders, ER_Ctrl_Degraders),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "ER",
-  filename = 'KYERI_Img/#ER_venn_diagramm.png',
+  filename = 'KYERI_Img/#ER_venn_diagramm_th0.png',
   output=TRUE
 )
 ```
 ```{r}
-intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
+# intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
+intersect(LF_PSS_Degraders, LF_PS_Degraders)
+```
+```{r}
+intS <-c(intersect(c(1:10), c(5:15)))
+intS
+setdiff(intS, c(7:10))
 ```
 
 
 ```{r}
-aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders))#, LF_S_Degraders, LF_Ctrl_Degraders))
+aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders))#, LF_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, LF_Ctrl_Degraders)
 Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_LF))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)
+plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0)
+
+aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders))#, LF_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, LF_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_LF))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
+
+
+aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, RC_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
+aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, RC_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+scale_x_discrete(limits=c("1","2","3","4","5","6","7","12"))
+
+aa <- Reduce(intersect, list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders))#, AS_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, AS_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_AS))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
+aa <- Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders))#, ER_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, ER_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
 
 ```
-```{r}
-aa<-Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders))
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)
-```
+
 https://www.ebi.ac.uk/biomodels-main/path2models?about=205
 
 
