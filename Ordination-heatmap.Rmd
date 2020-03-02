@@ -48,38 +48,108 @@ ps_RC <- subset_samples(poly.ps, Location == "RC")
 ```{r}
 ps.prop <- transform_sample_counts(poly.ps, function(otu) otu/sum(otu))
 ord.nmds.bray <- ordinate (poly.ps, method = "NMDS",distance="bray")
-plot_ordination(poly.ps,ord.nmds.bray, color="Location", title = "4 Site Ordination")
+p_sites = plot_ordination(poly.ps,ord.nmds.bray, color="Location", title = "4 Site Ordination", label = "Description") 
+
+p_sites
+
 ggsave("Ordination_sites.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+```{r}
+sample.variables(poly.ps)
+```
+
+```{r}
+ps.prop <- transform_sample_counts(poly.ps, function(otu) otu/sum(otu))
+ord.nmds.bray <- ordinate (poly.ps, method = "NMDS",distance="bray")
+p_sites = plot_ordination(poly.ps,ord.nmds.bray, color="Location", title = "4 Site Ordination", label = "Description") 
+
+p_sites
+
+ggsave("Ordination_sites.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+```{r}
+ps_LF.prop <- transform_sample_counts(ps_LF, function(otu) otu/sum(otu))
+ord.nmds.bray.LF <- ordinate (ps_LF, method = "NMDS",distance="bray")
+p_LF = plot_ordination(ps_LF,ord.nmds.bray.LF, color="Condition", title = "Site_LF Ordination", label = "Description")
+p_LF + geom_point(size=4)
+
+ggsave("Ordination_LF_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
 ```
 
 
 ```{r}
 ps_LF.prop <- transform_sample_counts(ps_LF, function(otu) otu/sum(otu))
 ord.nmds.bray.LF <- ordinate (ps_LF, method = "NMDS",distance="bray")
-plot_ordination(ps_LF,ord.nmds.bray.LF, color="Condition", title = "Site_LF Ordination")
+p_LF = plot_ordination(ps_LF,ord.nmds.bray.LF, color="Week", shape = "Condition", title = "Site_LF Ordination")
+p_LF + geom_point(size=4)+geom_text(aes(label=Description))
+
 ggsave("Ordination_LF.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
 ```
 
 ```{r}
 ps_AS.prop <- transform_sample_counts(ps_AS, function(otu) otu/sum(otu))
 ord.nmds.bray.AS <- ordinate (ps_AS, method = "NMDS",distance="bray")
-plot_ordination(ps_AS,ord.nmds.bray.AS, color="Condition", title = "Site_AS Ordination")
-ggsave("Ordination_AS.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+p_AS = plot_ordination(ps_AS,ord.nmds.bray.AS, color="Condition", title = "Site_AS Ordination")
+p_AS + geom_point(size=4)
+
+ggsave("Ordination_AS_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+```{r}
+ps_AS.prop <- transform_sample_counts(ps_AS, function(otu) otu/sum(otu))
+ord.nmds.bray.AS <- ordinate (ps_AS, method = "NMDS",distance="bray")
+p_AS = plot_ordination(ps_AS,ord.nmds.bray.AS, color="Condition", title = "Site_AS Ordination")
+p_AS + geom_point(size=4)
+
+ggsave("Ordination_AS_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
 ```
 
+```{r}
+ps_AS.prop <- transform_sample_counts(ps_AS, function(otu) otu/sum(otu))
+ord.nmds.bray.AS <- ordinate (ps_AS, method = "NMDS",distance="bray")
+p_AS = plot_ordination(ps_AS,ord.nmds.bray.AS, color="Week", shape = "Condition", title = "Site_AS Ordination")
+p_AS + geom_point(size=4)
+
+ggsave("Ordination_AS.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
 
 ```{r}
 ps_ER.prop <- transform_sample_counts(ps_ER, function(otu) otu/sum(otu))
 ord.nmds.bray.ER <- ordinate (ps_ER, method = "NMDS",distance="bray")
-plot_ordination(ps_ER,ord.nmds.bray.ER, color = "Week", shape = "Condition", title = "Site-ER Ordination")
-ggsave("Ordination_ER.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+p_ER = plot_ordination(ps_ER,ord.nmds.bray.ER, color = "Condition", title = "Site-ER Ordination")
+p_ER + geom_point(size=1) +geom_text(aes(label=Description))
+ggsave("Ordination_ER_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+```{r}
+ps_ER.prop <- transform_sample_counts(ps_ER, function(otu) otu/sum(otu))
+ord.nmds.bray.ER <- ordinate (ps_ER, method = "NMDS",distance="bray")
+p_ER = plot_ordination(ps_ER,ord.nmds.bray.ER, color = "Condition", title = "Site-ER Ordination")
+p_ER + geom_point(size=4)
+ggsave("Ordination_ER_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
 ```
 
+```{r}
+ps_ER.prop <- transform_sample_counts(ps_ER, function(otu) otu/sum(otu))
+ord.nmds.bray.ER <- ordinate (ps_ER, method = "NMDS",distance="bray")
+p_ER = plot_ordination(ps_ER,ord.nmds.bray.ER, color = "Week", shape = "Condition", title = "Site-ER Ordination")
+p_ER + geom_point(size=4)
+ggsave("Ordination_ER.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
 
 ```{r}
 ps_RC.prop <- transform_sample_counts(ps_RC, function(otu) otu/sum(otu))
 ord.nmds.bray.RC <- ordinate (ps_RC, method = "NMDS",distance="bray")
-plot_ordination(ps_RC,ord.nmds.bray.RC, color="Condition", title = "Site_RC Ordination")
+p_RC = plot_ordination(ps_RC,ord.nmds.bray.RC, color="Condition", title = "Site_RC Ordination")
+p_RC + geom_point(size=4)
+ggsave("Ordination_RC_Condition.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
+```
+
+```{r}
+ps_RC.prop <- transform_sample_counts(ps_RC, function(otu) otu/sum(otu))
+ord.nmds.bray.RC <- ordinate (ps_RC, method = "NMDS",distance="bray")
+p_RC = plot_ordination(ps_RC,ord.nmds.bray.RC, color="Week", shape = "Condition", title = "Site_RC Ordination")
+p_RC + geom_point(size=4)
 ggsave("Ordination_RC.png", plot = last_plot(), scale = 1, width = 8, height =6, units = "in")
 ```
 
