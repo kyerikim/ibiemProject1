@@ -14,6 +14,7 @@ library(fs)
 ## Define Paths
 ```{r}
 poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
+ps_LF.rds = "/home/guest/ibiemProject1/ps_LF.rds"
 ```
 
 ## Check Phyloseq RDS
@@ -29,6 +30,15 @@ sample_data(ibiemProject1_subset)
 
 ```{r}
 df <- sample_data(poly.ps)
+head(df)
+```
+
+```{r}
+otu_table(poly.ps)[1:2,1:2]
+```
+
+```{r}
+tax_table(poly.ps)[1,]
 ```
 
 ```{r}
@@ -42,13 +52,19 @@ ps_RC <- subset_samples(poly.ps, Location == "RC")
 
 
 ```{r}
+ps_LF
+saveRDS(ps_LF, "ps_LF.rds")
+```
+
+
+```{r}
 # poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
 outdir=path.expand("~/scratch/lefse")
 # lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
 
 
 
-poly.rds %>%
+ps_LF.rds %>%
   path_file %>%
   path_ext_remove %>%
   path(outdir, .) ->
@@ -71,8 +87,8 @@ Sys.setenv(BASENAME=output_basename)
 Sys.setenv(NORMALIZATION="-o 1000000")
 Sys.setenv(PLOT_FORMAT="png")
 
-poly.ps = read_rds(poly.rds)
-print(poly.ps)
+ps_LF = read_rds(ps_LF.rds)
+print(ps_LF)
 ```
 
 
@@ -136,7 +152,7 @@ sample_variables(poly.ps)
 ```{r}
 # format.flags = GenerateLefseOutput(atacama.ps, c("Vegetation","TransectName"), lefse.input.file)
 grouping_parameter="Condition"
-format.flags = GenerateLefseOutput(poly.ps, grouping_parameter, lefse.input.file)
+format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
@@ -147,6 +163,9 @@ format_input.py $LEFSE_INPUT_FILE  "${BASENAME}.in" $FORMAT_FLAGS $NORMALIZATION
 
 ```{bash}
 run_lefse.py "${BASENAME}.in" ${BASENAME}.res
+```
+```{r}
+ggplot()
 ```
 
 ```{bash}
