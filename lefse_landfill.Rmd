@@ -35,7 +35,7 @@ head(df)
 ```
 
 ```{r}
-df$Week=as.factor(df$Week,levels=c("1","2","3","4","5","6","7","12"))
+df$Week <- factor(df$Week,levels=c("1","2","3","4","5","6","7","12"))
 ```
 
 
