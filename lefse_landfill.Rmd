@@ -24,6 +24,7 @@ poly.ps = read_rds(poly.rds)
 print(poly.ps)
 ```
 
+
 ```{r}
 sample_data(ibiemProject1_subset)
 ```
@@ -34,13 +35,13 @@ head(df)
 ```
 
 ```{r}
-otu_table(poly.ps)[1:2,1:2]
+df$Week=as.factor(df$Week,levels=c("1","2","3","4","5","6","7","12"))
 ```
+
 
 ```{r}
-tax_table(poly.ps)[1,]
+head(df)
 ```
-
 ```{r}
 #Subset by LF
 
@@ -150,9 +151,9 @@ sample_variables(poly.ps)
 ```
 
 ```{r}
-# format.flags = GenerateLefseOutput(atacama.ps, c("Vegetation","TransectName"), lefse.input.file)
-grouping_parameter="Condition"
-format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
+format.flags = GenerateLefseOutput(ps_LF, c("Condition","Week"), lefse.input.file)
+#grouping_parameter="Condition"
+#format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
