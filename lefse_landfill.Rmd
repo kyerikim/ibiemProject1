@@ -10,11 +10,13 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 library(fs)
+library(ggplot2)
 ```
 ## Define Paths
 ```{r}
 poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
 ps_LF.rds = "/home/guest/ibiemProject1/ps_LF.rds"
+ps_LF_1_12.rds = "/home/guest/ibiemProject1/ps_LF_1_12.rds"
 ```
 
 ## Check Phyloseq RDS
@@ -51,16 +53,27 @@ ps_AS <- subset_samples(poly.ps, Location == "AS")
 ps_RC <- subset_samples(poly.ps, Location == "RC")
 ```
 
+```{r}
+#Subset by Week 
+ps_LF_1 <- subset_samples(ps_LF, Week == 1)
+ps_LF_12 <- subset_samples(ps_LF, Week == 12)
+saveRDS(ps_LF_1,"ps_LF_1.rds")
+saveRDS(ps_LF_12,"ps_LF_12.rds")
+ps_LF_1_12 <-merge_phyloseq(ps_LF_12,ps_LF_1)
+sample_data(ps_LF_1_12)
+saveRDS(ps_LF_1_12,"ps_LF_1_12.rds")
+```
 
 ```{r}
 ps_LF
 saveRDS(ps_LF, "ps_LF.rds")
+sample_data(ps_LF)
 ```
 
 
 ```{r}
 # poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
-outdir=path.expand("~/scratch/lefse")
+outdir=path.expand("~/ibiemProject1/lefse")
 # lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
 
 
@@ -151,9 +164,9 @@ sample_variables(poly.ps)
 ```
 
 ```{r}
-format.flags = GenerateLefseOutput(ps_LF, c("Condition","Week"), lefse.input.file)
-#grouping_parameter="Condition"
-#format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
+#format.flags = GenerateLefseOutput(ps_LF, c("Condition","Week"), lefse.input.file)
+grouping_parameter="Condition"
+format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
@@ -165,8 +178,17 @@ format_input.py $LEFSE_INPUT_FILE  "${BASENAME}.in" $FORMAT_FLAGS $NORMALIZATION
 ```{bash}
 run_lefse.py "${BASENAME}.in" ${BASENAME}.res
 ```
+
 ```{r}
-ggplot()
+lefse.bar
+```
+
+```{r}
+plot(ps_LF.in)
+``` 
+
+```{r}
+ggsave("gg1.png", plot = last_plot(), device=NULL, scale = 1, width = 8, height =6, units = "in")
 ```
 
 ```{bash}
@@ -181,6 +203,7 @@ cat(paste0("![Barplot of taxa associated with ", grouping_parameter, "](", lefse
 ```{bash}
 plot_cladogram.py ${BASENAME}.res ${BASENAME}.cladogram.${PLOT_FORMAT} --format ${PLOT_FORMAT}
 ```
+
 ```{r}
 lefse.cladogram = path_ext_set(output_basename, ".cladogram.png")
 
@@ -200,6 +223,159 @@ for (curplot in list.files(taxon_plots, full.names = TRUE)){
   cat(paste0("![Individual Taxon Associated With ", grouping_parameter, "](", curplot, ")"), fill = FALSE)
 }
 ```
+
+
+
+
+# choose 2 time points (early vs. late) to compare, instead of by conditions 
+```{r}
+# poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
+outdir=path.expand("~/scratch/lefse/week1&12")
+# lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
+
+
+
+ps_LF_1_12.rds %>%
+  path_file %>%
+  path_ext_remove %>%
+  path(outdir, .) ->
+  output_basename 
+
+lefse.input.file = path_ext_set(output_basename, ".tsv")
+
+
+if(dir_exists(outdir)){
+  dir_delete(outdir)
+}
+dir.create(outdir)
+
+
+Sys.setenv(LEFSE_INPUT_FILE=lefse.input.file)
+Sys.setenv(OUTDIR=outdir)
+Sys.setenv(BASENAME=output_basename)
+
+# NORMALIZATION=""
+Sys.setenv(NORMALIZATION="-o 1000000")
+Sys.setenv(PLOT_FORMAT="png")
+
+ps_LF_1_12 = read_rds(ps_LF_1_12.rds)
+print(ps_LF_1_12)
+```
+
+
+```{r}
+#' RepseqToTaxa:
+#' Convert Repseq column names to Taxa column names in a spread data frame
+#' The big problem here is that this needs to be done after all other 
+#' manipulations to the dataframe, otherwise most functions will balk if there
+#' are dataframe columns with identical names
+#'
+#' @param df The dataframe generated from phyloseq object.
+#' @param ps.ps phyloseq object from which df was derived.
+RepseqToTaxa <- function(ps_LF_1_12, ps.ps) {
+  tax.df = as.data.frame(tax_table(ps.ps)) %>%
+    rownames_to_column("repseq") %>%
+    mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
+    select(repseq, taxonomy)
+  
+  # need to preserve non-OTU column names (otherwise they get lost)
+  colname_match = match(names(ps_LF_1_12), tax.df$repseq)
+  cols_to_keep = which(is.na(colname_match))
+  colnames_to_keep = names(ps_LF_1_12)[cols_to_keep]
+  
+  # replace repseqs with taxonomies
+  names(ps_LF_1_12) = tax.df$taxonomy[match(names(ps_LF_1_12), tax.df$repseq)]
+  # now reset the non-OTU column names
+  names(ps_LF_1_12)[cols_to_keep] = colnames_to_keep
+  return(ps_LF_1_12)
+}
+
+GenerateLefseOutput = function(ps,output_columns,outfile){
+  if(length(output_columns)==1){
+    format.flags="-f c -u 1 -c 2"
+  }else if(length(output_columns)==2){
+    format.flags="-f c -u 1 -c 2 -s 3"
+  }else{
+    stop("output_columns must be a vector of length 1 or 2")
+  }
+  base_columns = c("SampleID","OTU","Abundance")
+  ps_LF_1_12 = psmelt(ps) %>% 
+    mutate(SampleID = str_replace(Sample, pattern="\\.", replacement="_")) %>%
+    mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
+    select(one_of(c(base_columns,output_columns))) %>%
+    spread(OTU, Abundance)
+  
+  RepseqToTaxa(ps_LF_1_12, ps) %>%
+    write.table(file=outfile, 
+                sep="\t", quote = FALSE,
+                row.names = FALSE)
+  
+  return(format.flags)
+}
+
+```
+
+
+```{r}
+sample_variables(poly.ps)
+```
+
+```{r}
+#format.flags = GenerateLefseOutput(ps_LF_1_12, c("Condition","Week"), lefse.input.file)
+  grouping_parameter="Week"
+format.flags = GenerateLefseOutput(ps_LF_1_12, grouping_parameter, lefse.input.file)
+Sys.setenv(FORMAT_FLAGS=format.flags)
+```
+
+
+```{bash}
+format_input.py $LEFSE_INPUT_FILE  "${BASENAME}.in" $FORMAT_FLAGS $NORMALIZATION  --output_table ${BASENAME}.tab
+```
+
+```{bash}
+run_lefse.py "${BASENAME}.in" ${BASENAME}.res
+```
+
+
+```{bash}
+plot_res.py --format ${PLOT_FORMAT} ${BASENAME}.res ${BASENAME}.${PLOT_FORMAT}
+```
+
+```{r}
+lefse.bar = path_ext_set(output_basename, ".png")
+cat(paste0("![Barplot of taxa associated with ", grouping_parameter, "](", lefse.bar, ")"), fill = FALSE)
+```
+
+```{bash}
+plot_cladogram.py ${BASENAME}.res ${BASENAME}.cladogram.${PLOT_FORMAT} --format ${PLOT_FORMAT}
+```
+
+```{r}
+lefse.cladogram = path_ext_set(output_basename, ".cladogram.png")
+
+cat(paste0("![Cladogram of taxa associated with ", grouping_parameter, "](", lefse.cladogram, ")"), fill = FALSE)
+```
+
+```{bash}
+mkdir -p ${BASENAME}_individual_taxon_plots
+
+plot_features.py ${BASENAME}.in ${BASENAME}.res ${BASENAME}_individual_taxon_plots/
+```
+
+```{r}
+taxon_plots = paste0(output_basename, "_individual_taxon_plots")
+
+for (curplot in list.files(taxon_plots, full.names = TRUE)){
+  cat(paste0("![Individual Taxon Associated With ", grouping_parameter, "](", curplot, ")"), fill = FALSE)
+}
+```
+
+```{r}
+#GGPlot 
+ggplot(data = ps_LF_1_12.tsv)
+```
+
+
 
 ```{r}
 sessionInfo()
