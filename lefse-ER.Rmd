@@ -1,4 +1,8 @@
 ---
+title: "Lefse:ER"
+output: html_document
+---
+---
 title: "lefse-landfill"
 output: html_document
 ---
@@ -15,8 +19,8 @@ library(ggplot2)
 ## Define Paths
 ```{r}
 poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
-ps_LF.rds = "/home/guest/ibiemProject1/ps_LF.rds"
-ps_LF_1_12.rds = "/home/guest/ibiemProject1/ps_LF_1_12.rds"
+ps_ER.rds = "/home/guest/ibiemProject1/ps_ER.rds"
+ps_ER_1_12.rds = "/home/guest/ibiemProject1/ps_ER_1_12.rds"
 ```
 
 ## Check Phyloseq RDS
@@ -44,8 +48,9 @@ df$Week=factor(df$Week,levels=c("1","2","3","4","5","6","7","12"))
 ```{r}
 head(df)
 ```
+
 ```{r}
-#Subset by LF
+#Subset by ER
 
 ps_LF <- subset_samples(poly.ps, Location == "LF")
 ps_ER <- subset_samples(poly.ps, Location == "ER")
@@ -55,30 +60,30 @@ ps_RC <- subset_samples(poly.ps, Location == "RC")
 
 ```{r}
 #Subset by Week 
-ps_LF_1 <- subset_samples(ps_LF, Week == 1)
-ps_LF_12 <- subset_samples(ps_LF, Week == 12)
-saveRDS(ps_LF_1,"ps_LF_1.rds")
-saveRDS(ps_LF_12,"ps_LF_12.rds")
-ps_LF_1_12 <-merge_phyloseq(ps_LF_12,ps_LF_1)
-sample_data(ps_LF_1_12)
-saveRDS(ps_LF_1_12,"ps_LF_1_12.rds")
+ps_ER_1 <- subset_samples(ps_ER, Week == 1)
+ps_ER_12 <- subset_samples(ps_ER, Week == 12)
+saveRDS(ps_ER_1,"ps_ER_1.rds")
+saveRDS(ps_ER_12,"ps_ER_12.rds")
+ps_ER_1_12 <-merge_phyloseq(ps_ER_12,ps_ER_1)
+sample_data(ps_ER_1_12)
+saveRDS(ps_ER_1_12,"ps_ER_1_12.rds")
 ```
 
 ```{r}
-ps_LF
-saveRDS(ps_LF, "ps_LF.rds")
-sample_data(ps_LF)
+ps_ER
+saveRDS(ps_ER, "ps_ER.rds")
+sample_data(ps_ER)
 ```
 
 
 ```{r}
 # poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
-outdir=path.expand("~/scratch//lefse")
+outdir=path.expand("~/scratch/lefse/ER")
 # lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
 
 
 
-ps_LF.rds %>%
+ps_ER.rds %>%
   path_file %>%
   path_ext_remove %>%
   path(outdir, .) ->
@@ -101,8 +106,8 @@ Sys.setenv(BASENAME=output_basename)
 Sys.setenv(NORMALIZATION="-o 1000000")
 Sys.setenv(PLOT_FORMAT="png")
 
-ps_LF = read_rds(ps_LF.rds)
-print(ps_LF)
+ps_ER = read_rds(ps_ER.rds)
+print(ps_ER)
 ```
 
 
@@ -115,22 +120,22 @@ print(ps_LF)
 #'
 #' @param df The dataframe generated from phyloseq object.
 #' @param ps.ps phyloseq object from which df was derived.
-RepseqToTaxa <- function(ps_LF, ps.ps) {
+RepseqToTaxa <- function(ps_ER, ps.ps) {
   tax.df = as.data.frame(tax_table(ps.ps)) %>%
     rownames_to_column("repseq") %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(repseq, taxonomy)
   
   # need to preserve non-OTU column names (otherwise they get lost)
-  colname_match = match(names(ps_LF), tax.df$repseq)
+  colname_match = match(names(ps_ER), tax.df$repseq)
   cols_to_keep = which(is.na(colname_match))
-  colnames_to_keep = names(ps_LF)[cols_to_keep]
+  colnames_to_keep = names(ps_ER)[cols_to_keep]
   
   # replace repseqs with taxonomies
-  names(ps_LF) = tax.df$taxonomy[match(names(ps_LF), tax.df$repseq)]
+  names(ps_ER) = tax.df$taxonomy[match(names(ps_ER), tax.df$repseq)]
   # now reset the non-OTU column names
-  names(ps_LF)[cols_to_keep] = colnames_to_keep
-  return(ps_LF)
+  names(ps_ER)[cols_to_keep] = colnames_to_keep
+  return(ps_ER)
 }
 
 GenerateLefseOutput = function(ps,output_columns,outfile){
@@ -142,13 +147,13 @@ GenerateLefseOutput = function(ps,output_columns,outfile){
     stop("output_columns must be a vector of length 1 or 2")
   }
   base_columns = c("SampleID","OTU","Abundance")
-  ps_LF = psmelt(ps) %>% 
+  ps_ER = psmelt(ps) %>% 
     mutate(SampleID = str_replace(Sample, pattern="\\.", replacement="_")) %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(one_of(c(base_columns,output_columns))) %>%
     spread(OTU, Abundance)
   
-  RepseqToTaxa(ps_LF, ps) %>%
+  RepseqToTaxa(ps_ER, ps) %>%
     write.table(file=outfile, 
                 sep="\t", quote = FALSE,
                 row.names = FALSE)
@@ -164,9 +169,9 @@ sample_variables(poly.ps)
 ```
 
 ```{r}
-#format.flags = GenerateLefseOutput(ps_LF, c("Condition","Week"), lefse.input.file)
+#format.flags = GenerateLefseOutput(ps_ER, c("Condition","Week"), lefse.input.file)
 grouping_parameter="Condition"
-format.flags = GenerateLefseOutput(ps_LF, grouping_parameter, lefse.input.file)
+format.flags = GenerateLefseOutput(ps_ER, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
@@ -223,12 +228,12 @@ for (curplot in list.files(taxon_plots, full.names = TRUE)){
 # choose 2 time points (early vs. late) to compare, instead of by conditions 
 ```{r}
 # poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
-outdir=path.expand("~/scratch/lefse/week1&12")
+outdir=path.expand("~/scratch/lefse/ER/Week")
 # lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
 
 
 
-ps_LF_1_12.rds %>%
+ps_ER_1_12.rds %>%
   path_file %>%
   path_ext_remove %>%
   path(outdir, .) ->
@@ -251,8 +256,8 @@ Sys.setenv(BASENAME=output_basename)
 Sys.setenv(NORMALIZATION="-o 1000000")
 Sys.setenv(PLOT_FORMAT="png")
 
-ps_LF_1_12 = read_rds(ps_LF_1_12.rds)
-print(ps_LF_1_12)
+ps_ER_1_12 = read_rds(ps_ER_1_12.rds)
+print(ps_ER_1_12)
 ```
 
 
@@ -265,22 +270,22 @@ print(ps_LF_1_12)
 #'
 #' @param df The dataframe generated from phyloseq object.
 #' @param ps.ps phyloseq object from which df was derived.
-RepseqToTaxa <- function(ps_LF_1_12, ps.ps) {
+RepseqToTaxa <- function(ps_ER_1_12, ps.ps) {
   tax.df = as.data.frame(tax_table(ps.ps)) %>%
     rownames_to_column("repseq") %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(repseq, taxonomy)
   
   # need to preserve non-OTU column names (otherwise they get lost)
-  colname_match = match(names(ps_LF_1_12), tax.df$repseq)
+  colname_match = match(names(ps_ER_1_12), tax.df$repseq)
   cols_to_keep = which(is.na(colname_match))
-  colnames_to_keep = names(ps_LF_1_12)[cols_to_keep]
+  colnames_to_keep = names(ps_ER_1_12)[cols_to_keep]
   
   # replace repseqs with taxonomies
-  names(ps_LF_1_12) = tax.df$taxonomy[match(names(ps_LF_1_12), tax.df$repseq)]
+  names(ps_ER_1_12) = tax.df$taxonomy[match(names(ps_ER_1_12), tax.df$repseq)]
   # now reset the non-OTU column names
-  names(ps_LF_1_12)[cols_to_keep] = colnames_to_keep
-  return(ps_LF_1_12)
+  names(ps_ER_1_12)[cols_to_keep] = colnames_to_keep
+  return(ps_ER_1_12)
 }
 
 GenerateLefseOutput = function(ps,output_columns,outfile){
@@ -292,13 +297,13 @@ GenerateLefseOutput = function(ps,output_columns,outfile){
     stop("output_columns must be a vector of length 1 or 2")
   }
   base_columns = c("SampleID","OTU","Abundance")
-  ps_LF_1_12 = psmelt(ps) %>% 
+  ps_ER_1_12 = psmelt(ps) %>% 
     mutate(SampleID = str_replace(Sample, pattern="\\.", replacement="_")) %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(one_of(c(base_columns,output_columns))) %>%
     spread(OTU, Abundance)
   
-  RepseqToTaxa(ps_LF_1_12, ps) %>%
+  RepseqToTaxa(ps_ER_1_12, ps) %>%
     write.table(file=outfile, 
                 sep="\t", quote = FALSE,
                 row.names = FALSE)
@@ -314,9 +319,9 @@ sample_variables(poly.ps)
 ```
 
 ```{r}
-#format.flags = GenerateLefseOutput(ps_LF_1_12, c("Condition","Week"), lefse.input.file)
+#format.flags = GenerateLefseOutput(ps_ER_1_12, c("Condition","Week"), lefse.input.file)
   grouping_parameter="Week"
-format.flags = GenerateLefseOutput(ps_LF_1_12, grouping_parameter, lefse.input.file)
+format.flags = GenerateLefseOutput(ps_ER_1_12, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
@@ -374,12 +379,12 @@ for (curplot in list.files(taxon_plots, full.names = TRUE)){
 
 
 # poly.ps.rds = "/data/tutorial_data/poly_1pct.rds"
-outdir=path.expand("~/scratch/lefse/week1&12_subclass_Condition")
+outdir=path.expand("~/scratch/lefse/ER/week-Condition")
 # lefse.input.file=file.path(outdir,"data_for_lefse.tsv")
 
 
 
-ps_LF_1_12.rds %>%
+ps_ER_1_12.rds %>%
   path_file %>%
   path_ext_remove %>%
   path(outdir, .) ->
@@ -402,8 +407,8 @@ Sys.setenv(BASENAME=output_basename)
 Sys.setenv(NORMALIZATION="-o 1000000")
 Sys.setenv(PLOT_FORMAT="png")
 
-ps_LF_1_12 = read_rds(ps_LF_1_12.rds)
-print(ps_LF_1_12)
+ps_ER_1_12 = read_rds(ps_ER_1_12.rds)
+print(ps_ER_1_12)
 ```
 
 
@@ -416,22 +421,22 @@ print(ps_LF_1_12)
 #'
 #' @param df The dataframe generated from phyloseq object.
 #' @param ps.ps phyloseq object from which df was derived.
-RepseqToTaxa <- function(ps_LF_1_12, ps.ps) {
+RepseqToTaxa <- function(ps_ER_1_12, ps.ps) {
   tax.df = as.data.frame(tax_table(ps.ps)) %>%
     rownames_to_column("repseq") %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(repseq, taxonomy)
   
   # need to preserve non-OTU column names (otherwise they get lost)
-  colname_match = match(names(ps_LF_1_12), tax.df$repseq)
+  colname_match = match(names(ps_ER_1_12), tax.df$repseq)
   cols_to_keep = which(is.na(colname_match))
-  colnames_to_keep = names(ps_LF_1_12)[cols_to_keep]
+  colnames_to_keep = names(ps_ER_1_12)[cols_to_keep]
   
   # replace repseqs with taxonomies
-  names(ps_LF_1_12) = tax.df$taxonomy[match(names(ps_LF_1_12), tax.df$repseq)]
+  names(ps_ER_1_12) = tax.df$taxonomy[match(names(ps_ER_1_12), tax.df$repseq)]
   # now reset the non-OTU column names
-  names(ps_LF_1_12)[cols_to_keep] = colnames_to_keep
-  return(ps_LF_1_12)
+  names(ps_ER_1_12)[cols_to_keep] = colnames_to_keep
+  return(ps_ER_1_12)
 }
 
 GenerateLefseOutput = function(ps,output_columns,outfile){
@@ -443,13 +448,13 @@ GenerateLefseOutput = function(ps,output_columns,outfile){
     stop("output_columns must be a vector of length 1 or 2")
   }
   base_columns = c("SampleID","OTU","Abundance")
-  ps_LF_1_12 = psmelt(ps) %>% 
+  ps_ER_1_12 = psmelt(ps) %>% 
     mutate(SampleID = str_replace(Sample, pattern="\\.", replacement="_")) %>%
     mutate(taxonomy = paste(Kingdom,Phylum,Class,Order,Family,Genus, sep="|")) %>%
     select(one_of(c(base_columns,output_columns))) %>%
     spread(OTU, Abundance)
   
-  RepseqToTaxa(ps_LF_1_12, ps) %>%
+  RepseqToTaxa(ps_ER_1_12, ps) %>%
     write.table(file=outfile, 
                 sep="\t", quote = FALSE,
                 row.names = FALSE)
@@ -465,9 +470,9 @@ sample_variables(poly.ps)
 ```
 
 ```{r}
-format.flags = GenerateLefseOutput(ps_LF_1_12, c("Week", "Condition"), lefse.input.file)
+format.flags = GenerateLefseOutput(ps_ER_1_12, c("Week", "Condition"), lefse.input.file)
 #grouping_parameter="Week"
-#format.flags = GenerateLefseOutput(ps_LF_1_12, grouping_parameter, lefse.input.file)
+#format.flags = GenerateLefseOutput(ps_ER_1_12, grouping_parameter, lefse.input.file)
 Sys.setenv(FORMAT_FLAGS=format.flags)
 ```
 
@@ -517,13 +522,13 @@ for (curplot in list.files(taxon_plots, full.names = TRUE)){
 # PS vs. C: class = PS & C, subclass = Week 
 ```{r}
 #Subset by PS and C  
-ps_LF_PS <- subset_samples(ps_LF, Condition == "PS")
-ps_LF_C <- subset_samples(ps_LF, Condition == "Ctrl")
-saveRDS(ps_LF_PS,"ps_LF_PS.rds")
-saveRDS(ps_LF_C,"ps_LF_C.rds")
-ps_LF_PS_C <-merge_phyloseq(ps_LF_PS,ps_LF_C)
-sample_data(ps_LF_PS_C)
-saveRDS(ps_LF_PS_C,"ps_LF_PS_C.rds")
+ps_ER_PS <- subset_samples(ps_ER, Condition == "PS")
+ps_ER_C <- subset_samples(ps_ER, Condition == "Ctrl")
+saveRDS(ps_ER_PS,"ps_ER_PS.rds")
+saveRDS(ps_ER_C,"ps_ER_C.rds")
+ps_ER_PS_C <-merge_phyloseq(ps_ER_PS,ps_ER_C)
+sample_data(ps_ER_PS_C)
+saveRDS(ps_ER_PS_C,"ps_ER_PS_C.rds")
 ```
 
 
