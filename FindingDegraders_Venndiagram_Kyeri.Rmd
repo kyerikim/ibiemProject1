@@ -250,22 +250,37 @@ plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", pos
 aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
 bb <- setdiff(aa, RC_Ctrl_Degraders)
 Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
 
 aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
 bb <- setdiff(aa, RC_Ctrl_Degraders)
 Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+scale_x_discrete(limits=c("1","2","3","4","5","6","7","12"))
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
+
+
+aa <- Reduce(intersect, list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders))#, AS_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, AS_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_AS))
+plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
 
 aa <- Reduce(intersect, list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders))#, AS_Ctrl_Degraders)) #still working on 3 common - Ctrl#
 bb <- setdiff(aa, AS_Ctrl_Degraders)
 Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_AS))
 plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
 
+
+
+aa <- Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders))#, ER_Ctrl_Degraders)) #still working on 3 common - Ctrl#
+bb <- setdiff(aa, ER_Ctrl_Degraders)
+Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
+plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
 aa <- Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders))#, ER_Ctrl_Degraders)) #still working on 3 common - Ctrl#
 bb <- setdiff(aa, ER_Ctrl_Degraders)
 Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
 plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
+
 
 ```
 
