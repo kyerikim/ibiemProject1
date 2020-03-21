@@ -44,7 +44,7 @@ library(vegan)
 
 ## Define Paths
 ```{r}
-poly.rds ="/sharedspace/polystyrene/demultiplexed3/dada2/ibiemProject1_subset.rds"
+poly.rds ="/sharedspace/polystyrene/demultiplexed4/dada2/ibiemProject1_subset.rds"
 #poly.rds ="/home/guest/project1_ibiem/demultiplexed3/dada2/ibiemProject1_subset.rds"
 ```
 
