@@ -92,6 +92,25 @@ rel_ps_LF <-transform_sample_counts(ps_LF, function(OTU) OTU/sum(OTU))
 rel_ps_ER <-transform_sample_counts(ps_ER, function(OTU) OTU/sum(OTU))
 rel_ps_AS <-transform_sample_counts(ps_AS, function(OTU) OTU/sum(OTU))
 rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
+
+as.data.frame(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])
+```
+```{r}
+z <- as.data.frame(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])
+x <- c(1, 12, 2:7)
+y <- unlist(as.vector(z))
+y
+typeof(y)
+fit <- lm(y ~ x)
+plot(x, y)
+summary(fit)
+
+x <- 1:10
+y <- rnorm(10)
+fit <- lm(y ~ x)
+summary(fit)
+names(summary(fit))
+summary(fit)$r.squared
 ```
 
 # Landfill relative OTU increasing species sorting
