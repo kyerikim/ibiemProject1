@@ -1,7 +1,9 @@
 ---
-title: "Linear Model: Polystyrene Analysis"
+title: 'Linear Model: Polystyrene Analysis'
 author: "Kara McCormack"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ```{r global_options, include=FALSE}
@@ -20,6 +22,18 @@ library(magrittr)
 library(vegan)
 ```
 
+## Goals: 
+1. Subset by location
+2. Subset by condition
+3. Conduct a linear regression with the following variables:
+  * x = Week
+  * y = OTU relative abundance
+4. Order by $R^2$ values, want to use those with high $R^2$ value
+5. Order by coefficient value on week, want to use those with higher coefficient
+  * this mean that time is significant for relative abundance for that OTU
+  * this means that that OTU might be a polystyrene degrader
+  
+
 ## Define Paths
 ```{r}
 poly.rds ="/sharedspace/polystyrene/demultiplexed5/dada2/ibiemProject1_subset.rds"
@@ -31,7 +45,35 @@ Load your phyloseq RDS and `print` it just to be sure things look sane
 poly.ps = read_rds(poly.rds)
 print(poly.ps)
 ```
-```{r}
 
+## Subset samples
+```{r}
+ps_LF <- subset_samples(poly.ps, Location=="LF")
+ps_ER <- subset_samples(poly.ps, Location=="ER")
+ps_AS <- subset_samples(poly.ps, Location=="AS")
+ps_RC <- subset_samples(poly.ps, Location=="RC")
 ```
+
+## Calculate relative abundance
+```{r}
+rel_ps_LF <-transform_sample_counts(ps_LF, function(OTU) OTU/sum(OTU))
+rel_ps_ER <-transform_sample_counts(ps_ER, function(OTU) OTU/sum(OTU))
+rel_ps_AS <-transform_sample_counts(ps_AS, function(OTU) OTU/sum(OTU))
+rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
+```
+
+
+## Subset by Condition
+```{r}
+ps_LF_ctrl <- subset_samples(rel_ps_LF, Condition == "Ctrl")
+```
+
+```{r}
+dim(otu_table(ps_LF_ctrl))
+for(i in 1:dim(otu_table(ps_LF_ctrl))[2]){
+  
+}
+as.vector(otu_table(ps_LF_ctrl)[, 1])
+```
+
 
