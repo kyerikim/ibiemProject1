@@ -118,12 +118,12 @@ LF_df_pss <- LF_df_pss[c(1, 3:8, 2),]
 ```
 
 ```{r}
-
+# add week as a column
 Week <- c(1:7, 12)
+
 LF_df_ctrl <- LF_df_ctrl %>%
   mutate(Week = as.factor(Week)) %>%
   select(Week, everything())
-head(LF_df_ctrl)
 ```
 
 ```{r}
