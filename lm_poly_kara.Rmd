@@ -46,6 +46,24 @@ poly.ps = read_rds(poly.rds)
 print(poly.ps)
 ```
 
+## Rename Week variable
+```{r}
+# calculate relative abundance
+rel <-transform_sample_counts(poly.ps, function(OTU) OTU/sum(OTU))
+
+# turn the otu table into a data.frame
+otu <- as.data.frame(otu_table(rel))
+
+first_otu <- colnames(otu)[1]
+last_otu <- colnames(otu)[ncol(otu)]
+
+otu %>%
+  pivot_longer(first_otu:last_otu, 
+               names_to = "OTU", 
+               values_to = "Relative Abundance") %>%
+  head
+```
+
 ## Subset samples
 ```{r}
 ps_LF <- subset_samples(poly.ps, Location=="LF")
@@ -64,16 +82,71 @@ rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
 
 
 ## Subset by Condition
+We break apart the Landfill phyloseq object into four categories:
+
+* Control
+* Polystyrene
+* Styrene
+* Polystyrene + Styrene
+
 ```{r}
-ps_LF_ctrl <- subset_samples(rel_ps_LF, Condition == "Ctrl")
+LF_ctrl <- subset_samples(rel_ps_LF, Condition == "Ctrl")
+LF_ps <- subset_samples(rel_ps_LF, Condition == "PS")
+LF_s <- subset_samples(rel_ps_LF, Condition == "S")
+LF_pss <- subset_samples(rel_ps_LF, Condition == "PSS")
+```
+
+## Subset to those with nonzero values for week 7 and 12
+We will filter out those with less than 0.1% relative abundance at weeks 7 and 12, because we want to look at those that have some substantial presence at those weeks, in order to even consider them as polystyrene degraders.
+```{r}
+# Grab OTUs from control and make into data frame
+LF_df_ctrl <- as.data.frame(otu_table(LF_ctrl))
+LF_df_ps <- as.data.frame(otu_table(LF_ps))
+LF_df_s <- as.data.frame(otu_table(LF_s))
+LF_df_pss <- as.data.frame(otu_table(LF_pss))
 ```
 
 ```{r}
-dim(otu_table(ps_LF_ctrl))
-for(i in 1:dim(otu_table(ps_LF_ctrl))[2]){
-  
-}
-as.vector(otu_table(ps_LF_ctrl)[, 1])
+# subset into only those OTUs with greater than 0.1% at weeks 7 and 12
+head(LF_df_ctrl)
+```
+Data is in wide format so need to pivot to long format to use filtering
+## test run for one iteration
+```{r}
+# week <- c(1, 12, 2:7)
+# my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, 1])
+# fit <- lm(my_otu_y ~ week)
+# if(summary(fit)$r.squared > .5) {index <- 1
+# } else {index <- 0}
+# index
+# 
+# rsq <- NULL
+# for (i in 1:10) {
+#   my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, i])
+#   rsq[i] <- summary(lm(my_otu_y ~ week))$r.squared
+# }
+# rsq
+
+# check out the fourth one
+# my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, 4])
+# fit <- lm(my_otu_y ~ week)
+# summary(fit)
+# 
+# my_otu_y
+```
+
+```{r}
+# define x variable: time (weeks)
+# week <- c(1, 12, 2:7)
+# index <- rep(0, dim(otu_table(ps_LF_ctrl))[2])
+# for(i in 1:dim(otu_table(ps_LF_ctrl))[2]){
+#   # define y variable: relative abundance
+#   my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, i])
+#   fit <- lm(my_otu_y ~ week)
+#   summary <- summary(fit)
+#   if(summary(fit)$r.squared > .5) index[i] <- 1
+# }
+# sum(index)
 ```
 
 
