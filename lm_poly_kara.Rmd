@@ -162,6 +162,18 @@ for(otu in 2:ncol(LF_df_ctrl_subset)){
 }
 result[order(result, decreasing = T)]
 ```
+Now we list OTUs that had an R-squared above 0.5. 
+```{r}
+# count the number of OTUs with R-squared values above 0.5
+num_above <- sum(result[order(result, decreasing = T)] >.5, na.rm = T)
+
+# grab the indices of the OTUs with R-squared values above 0.5
+ord <- order(result, decreasing = T)[1:num_above]
+
+# subset the dataframe with only those OTUs. 
+result_LF_ctrl <- LF_df_ctrl_subset[ , ord]
+
+```
 
 
 ## Function to find those above relative abundance threshold
