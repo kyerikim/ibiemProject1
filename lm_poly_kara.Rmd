@@ -98,6 +98,8 @@ LF_s <- subset_samples(rel_ps_LF, Condition == "S")
 LF_pss <- subset_samples(rel_ps_LF, Condition == "PSS")
 ```
 
+### Begin threshold_function items
+
 ## Subset to those with nonzero values for week 7 and 12
 We will filter out those with less than 0.1% relative abundance at weeks 7 and 12, because we want to look at those that have some substantial presence at those weeks, in order to even consider them as polystyrene degraders.
 ```{r}
@@ -179,7 +181,11 @@ result_LF_ctrl <- LF_df_ctrl_subset[ , ord]
 ## Function to find those above relative abundance threshold
 ```{r}
 # input: data frame of otu_table at site with specific condition
-# output: list of OTUs satisfying requirement for relative abundance threshold, how many
+# output: dataframe of OTUs satisfying requirement for relative abundance threshold, how many satisfy the threshold
+
+threshold_func <- function(df, threshold = .5){
+  
+}
 ```
 
 
