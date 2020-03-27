@@ -129,15 +129,48 @@ LF_df_ctrl <- LF_df_ctrl %>%
 
 ```{r}
 # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
-LF_df_ctrl %>%
+subset <- LF_df_ctrl %>%
   pivot_longer(-Week,
                names_to = "OTU", 
                values_to = "Relative Abundance") %>%
   filter(Week == 7 | Week == 12) %>% 
-  filter(`Relative Abundance` > .01) %>%
-  dim
+  filter(`Relative Abundance` > .001) 
+
+dim(subset)
+
+otu_names <- unique(subset$OTU)
+length(otu_names)
 ```
-Data is in wide format so need to pivot to long format to use filtering
+So we have 383 total samples in the Landfill site where, in the control condition, the OTUs had greater than .1% abundance at both weeks 7 and 12. Since some of these exceeded the threshold at both weeks 7 and 12, we see that there are a total of 220 unique OTUs satisfying this requirement. 
+
+Now, we need to perform linear regression on only those OTUs. 
+
+First, we will subset the OTU table using only those OTUs satisfying the threshold requirement. 
+```{r}
+LF_df_ctrl_subset <- LF_df_ctrl[,colnames(LF_df_ctrl)%in%otu_names]
+dim(LF_df_ctrl_subset)
+```
+Now, we will loop through these OTUs, performing linear regression on each relative abundance as a function of Week. 
+
+```{r}
+options(scipen = 999)
+week <- c(1:7, 12)
+result <- NULL
+for(otu in 2:ncol(LF_df_ctrl_subset)){
+  my_col <- as.vector(LF_df_ctrl_subset[,otu])
+  result[otu] <- round(summary(lm(my_col ~ week))$r.squared, digits = 3)
+}
+result[order(result, decreasing = T)]
+```
+
+
+## Function to find those above relative abundance threshold
+```{r}
+# input: data frame of otu_table at site with specific condition
+# output: list of OTUs satisfying requirement for relative abundance threshold, how many
+```
+
+
 ## test run for one iteration
 ```{r}
 # week <- c(1, 12, 2:7)
