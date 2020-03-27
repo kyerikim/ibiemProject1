@@ -139,6 +139,7 @@ subset <- LF_df_ctrl %>%
   filter(`Relative Abundance` > .001) 
 
 dim(subset)
+head(subset)
 
 otu_names <- unique(subset$OTU)
 length(otu_names)
@@ -174,17 +175,23 @@ ord <- order(result, decreasing = T)[1:num_above]
 
 # subset the dataframe with only those OTUs. 
 result_LF_ctrl <- LF_df_ctrl_subset[ , ord]
-
+result_LF_ctrl[,1:2]
 ```
 
 
 ## Function to find those above relative abundance threshold
 ```{r}
-# input: data frame of otu_table at site with specific condition
+# input: data frame of otu_table at specific site with specific condition
+#     - Note: columns are in the correct order in terms of weeks!
 # output: dataframe of OTUs satisfying requirement for relative abundance threshold, how many satisfy the threshold
+Week <- c(1:7, 12)
 
 threshold_func <- function(df, threshold = .5){
-  
+  # add week as a column
+
+df_long <- df %>%
+  mutate(Week = as.factor(Week)) %>%
+  select(Week, everything())
 }
 ```
 
