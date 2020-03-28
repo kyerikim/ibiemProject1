@@ -231,7 +231,7 @@ for(otu in 2:ncol(df_subset)){
   my_col <- as.vector(df_subset[ , otu])
   
   # calculate r.squared value from linear regression, put value in "result"
-  result[otu] <- round(summary(lm(my_col ~ week))$r.squared, digits = 3)
+  result[otu] <- round(summary(lm(my_col ~ Week))$r.squared, digits = 3)
 }
 
 # count the number of OTUs with R-squared values above threshold (default 0.5)
@@ -249,10 +249,11 @@ df_subset_r.squared <- df_subset[ , ord]
 return(list(otu_names_7_12 = otu_names,
             r.squared.result.full = result[order(result, decreasing = T)],
             df_subset_r.squared = df_subset_r.squared,
-            otu_names_7_12_r.squared = colnames(df_subset_r.squared)[-1]))
+            otu_names_7_12_r.squared = colnames(df_subset_r.squared)))
 }
 ```
 
+## Landfill Results
 ```{r}
 # try function on Landfill site, control condition
 result_lf <- threshold_func(LF_df_ctrl, threshold = 0.5)
@@ -272,6 +273,7 @@ result_s <- threshold_func(LF_df_s, threshold = 0.5)
 result_pss <- threshold_func(LF_df_s, threshold = 0.5)
 ```
 
+Now, we want to see if any of the OTUs passed both sets of requirements for all four conditions. 
 ```{r}
 
 ```
