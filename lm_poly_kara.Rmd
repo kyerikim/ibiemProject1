@@ -186,6 +186,9 @@ result_LF_ctrl[,1:2]
 # output: dataframe of OTUs satisfying requirement for relative abundance threshold, how many satisfy the threshold
 Week <- c(1:7, 12)
 
+# get rid of scientific notation
+options(scipen = 999)
+
 threshold_func <- function(df, threshold = .5){
 
 subset <- df %>%
@@ -209,6 +212,44 @@ subset <- df %>%
   
   # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
   filter(`Relative Abundance` > .001)
+
+# grab OTU names that met this requirement
+otu_names <- unique(subset$OTU)
+
+# how many OTUs satisfied the requriement?
+print(paste0("There are ", length(otu_names), " OTUs with > 0.1% at weeks 7 and 12."))
+
+# subset the full dataframe by only these OTUs
+df_subset <- df[ , colnames(df) %in% otu_names]
+
+# instantiate empty vector
+result <- NULL
+
+for(otu in 2:ncol(df_subset)){
+  
+  # grab the specific OTU column as a vector
+  my_col <- as.vector(df_subset[ , otu])
+  
+  # calculate r.squared value from linear regression, put value in "result"
+  result[otu] <- round(summary(lm(my_col ~ week))$r.squared, digits = 3)
+}
+
+# count the number of OTUs with R-squared values above threshold (default 0.5)
+num_above <- sum(result[order(result, decreasing = T)] > threshold, na.rm = T)
+
+# how many OTUs satisfied the requriement?
+print(paste0("There are ", num_above, " OTUs with r.squared value > " , threshold))
+
+# grab the indices of the OTUs with R-squared values above 0.5
+ord <- order(result, decreasing = T)[1:num_above]
+
+# subset the dataframe with only those OTUs. 
+df_subset_r.squared <- df_subset[ , ord]
+
+return(list(otu_names_7_12 = otu_names,
+            r.squared.result.full = result[order(result, decreasing = T)],
+            df_subset_r.squared = df_subset_r.squared,
+            otu_names_7_12_r.squared = colnames(df_subset_r.squared)[-1]))
 }
 ```
 
