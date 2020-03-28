@@ -187,11 +187,28 @@ result_LF_ctrl[,1:2]
 Week <- c(1:7, 12)
 
 threshold_func <- function(df, threshold = .5){
-  # add week as a column
 
-df_long <- df %>%
-  mutate(Week = as.factor(Week)) %>%
-  select(Week, everything())
+subset <- df %>%
+  # add week as a column
+  mutate(Week = as.factor(Week)) %>% 
+  
+  # move week to the beginning of the data frame
+  select(Week, everything()) %>% 
+  
+  # convert to long format 
+  pivot_longer(-Week, 
+               
+               # change sequence column name to "OTU"
+               names_to = "OTU", 
+               
+               # change relative abundance column name to "Relative Abundance"
+               values_to = "Relative Abundance") %>%
+  
+  # for weeks 7 and 12
+  filter(Week == 7 | Week == 12) %>% 
+  
+  # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
+  filter(`Relative Abundance` > .001)
 }
 ```
 
