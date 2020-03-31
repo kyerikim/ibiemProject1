@@ -518,16 +518,67 @@ df2 <- df %>%
 df2
 ```
 
+Get names for the title. 
+```{r}
+king <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 1]), "\n", sep = " ")
+phy <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 2]), "\n", sep = " ")
+class <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 3]), "\n", sep = " ")
+ord <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 4]), "\n", sep = " ")
+fam <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 5]), "\n", sep = " ")
+
+```
+
+
 ```{r}
 df2 %>% 
   ggplot(aes(x = Week, y = `Relative Abundance`, group = Condition)) +
   geom_line(aes(color = Condition), size = 1) +
-  geom_point(aes(color = Condition), size = 4)
+  geom_point(aes(color = Condition), size = 4) +
+  theme_bw() +
+  annotate("text", x = 1, y = .075, 
+           label = paste0("Taxonomic Rank: \n", 
+                          "Kingdom = ", king, 
+                          "Phylum = ", phy, 
+                          "Class = ", class,
+                          "Order = ", ord, 
+                          "Family = ", fam), 
+           hjust = 0) 
+#  ggtitle(paste0(king, phy, class, ord, fam))
 ```
+
+
+
+Now, I'll try to bring the top four OTUs together in a facet-wrap by OTU.
+
 ```{r}
-
+ss <- subset_samples(rel_ps_LF, Site = "Landfill", Condition )
+print(ss)
 ```
 
+```{r}
+my_subset <- subset(otu_table(poly.ps), colnames(otu_table(poly.ps)) %in% names(compare_ps)[order(compare_ps, decreasing = T)][1:5])
+
+new_physeq <- merge_phyloseq(my_subset, tax_table(poly.ps), sample_data(poly.ps))
+```
+
+```{r}
+otu_table(ss)[, 1:3]
+```
+
+```{r}
+first_otu <- names(compare_ps)[order(compare_ps, decreasing = T)][1:4]
+chosen_ctrl_2 <- LF_df_ctrl %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4]) %>%
+  pivot_longer(cols = )
+chosen_ctrl_2
+chosen_ps_2 <-  LF_df_ps_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+chosen_ps_2
+chosen_pss_2 <- LF_df_pss_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+chosen_s_2 <- LF_df_s_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+```
 ## ER Results
 ```{r}
 # Grab OTUs from each condition and make into data frame
