@@ -103,7 +103,7 @@ LF_pss <- subset_samples(rel_ps_LF, Condition == "PSS")
 ## Subset to those with nonzero values for week 7 and 12
 We will filter out those with less than 0.1% relative abundance at weeks 7 and 12, because we want to look at those that have some substantial presence at those weeks, in order to even consider them as polystyrene degraders.
 ```{r}
-# Grab OTUs from control and make into data frame
+# Grab OTUs from each condition and make into data frame
 LF_df_ctrl <- as.data.frame(otu_table(LF_ctrl))
 LF_df_ps <- as.data.frame(otu_table(LF_ps))
 LF_df_s <- as.data.frame(otu_table(LF_s))
@@ -224,6 +224,7 @@ df_subset <- df[ , colnames(df) %in% otu_names]
 
 # instantiate empty vector
 result <- NULL
+slope <- NULL
 
 for(otu in 2:ncol(df_subset)){
   
@@ -232,6 +233,7 @@ for(otu in 2:ncol(df_subset)){
   
   # calculate r.squared value from linear regression, put value in "result"
   result[otu] <- round(summary(lm(my_col ~ Week))$r.squared, digits = 3)
+  slope[otu] <- round(summary(lm(my_col ~ Week))$coefficients[2, 1], digits = 3)
 }
 
 # count the number of OTUs with R-squared values above threshold (default 0.5)
@@ -253,10 +255,21 @@ return(list(otu_names_7_12 = otu_names,
 }
 ```
 
+```{r}
+# small example
+x <- 1:10
+x
+y <- 2*x + rnorm(10, 0, 3)
+
+fit <- lm(y ~ x)
+summary(fit)$coefficients
+summary(fit)$coefficients[2,1]
+```
+
 ## Landfill Results
 ```{r}
 # try function on Landfill site, control condition
-result_lf <- threshold_func(LF_df_ctrl, threshold = 0.5)
+result_ctrl <- threshold_func(LF_df_ctrl, threshold = 0.5)
 ```
 ```{r}
 # use function on Landfill site, PS condition
@@ -275,8 +288,164 @@ result_pss <- threshold_func(LF_df_s, threshold = 0.5)
 
 Now, we want to see if any of the OTUs passed both sets of requirements for all four conditions. 
 ```{r}
+result_pss[[4]]
+unique(c(result_ctrl[[4]],
+       result_ps[[4]],
+       result_s[[4]],
+       result_pss[[4]]))
+
+result_ctrl[[4]][result_ctrl[[4]] %in% result_ps[[4]]] %in% result_s[[4]]
 
 ```
 
+So, none of the OTUs passed both sets of requirements for all four conditions.
 
+## AS Results
+We break apart the Elizabeth River (ER) phyloseq object into four categories:
+
+* Control
+* Polystyrene
+* Styrene
+* Polystyrene + Styrene
+
+```{r}
+ER_ctrl <- subset_samples(rel_ps_ER, Condition == "Ctrl")
+ER_ps <- subset_samples(rel_ps_ER, Condition == "PS")
+ER_s <- subset_samples(rel_ps_ER, Condition == "S")
+ER_pss <- subset_samples(rel_ps_ER, Condition == "PSS")
+```
+
+```{r}
+# Grab OTUs from each condition and make into data frame
+ER_df_ctrl <- as.data.frame(otu_table(ER_ctrl))
+ER_df_ps <- as.data.frame(otu_table(ER_ps))
+ER_df_s <- as.data.frame(otu_table(ER_s))
+ER_df_pss <- as.data.frame(otu_table(ER_pss))
+
+```
+
+```{r}
+# reorder data frame so that weeks are in correct order
+ER_df_ctrl <- ER_df_ctrl[c(1, 3:8, 2),]
+ER_df_ps <- ER_df_ps[c(1, 3:8, 2),]
+ER_df_s <- ER_df_s[c(1, 3:8, 2),]
+ER_df_pss <- ER_df_pss[c(1, 3:8, 2),]
+```
+
+## Elizabeth River Results
+```{r}
+# try function on Landfill site, control condition
+result_ER_ctrl <- threshold_func(ER_df_ctrl, threshold = 0.5)
+```
+```{r}
+# use function on Landfill site, PS condition
+result_ER_ps <- threshold_func(ER_df_ps, threshold = 0.5)
+```
+
+```{r}
+# use function on Landfill site, S condition
+result_ER_s <- threshold_func(ER_df_s, threshold = 0.5)
+```
+
+```{r}
+# use function on Landfill site, PSS condition
+result_ER_pss <- threshold_func(ER_df_pss, threshold = 0.5)
+```
+
+
+```{r}
+result_ER_ctrl[[4]][result_ER_ctrl[[4]] %in% result_ER_ps[[4]]] %in% result_ER_s[[4]]
+
+```
+
+## New plan
+```{r}
+subset <- LF_df_ctrl %>%
+  # add week as a column
+  mutate(Week = as.factor(Week)) %>% 
+  
+  # move week to the beginning of the data frame
+  select(Week, everything()) %>% 
+  
+  # convert to long format 
+  pivot_longer(-Week, 
+               
+               # change sequence column name to "OTU"
+               names_to = "OTU", 
+               
+               # change relative abundance column name to "Relative Abundance"
+               values_to = "Relative Abundance") %>%
+  
+  # for weeks 7 and 12
+  filter(Week == 7 | Week == 12) %>% 
+  
+  # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
+  filter(`Relative Abundance` > .001)
+
+# grab OTU names that met this requirement
+otu_names <- unique(subset$OTU)
+```
+
+## Landfill: LM on control
+```{r}
+week <- c(1:7, 12)
+ctrl_result_slope <- NULL
+
+for (otu in colnames(LF_df_ctrl)[-1]){
+  response_ctrl <- LF_df_ctrl[, otu]
+  ctrl_result_slope[otu] <- summary(lm(response_ctrl ~ week))$coefficients[2,1]
+}
+ctrl_result_slope
+```
+
+## Landfill: LM on PS
+```{r}
+ps_result_slope <- NULL
+
+for (otu in colnames(LF_df_ps)){
+  response_ps <- LF_df_ps[, otu]
+  ps_result_slope[otu] <- summary(lm(response_ps ~ week))$coefficients[2,1]
+}
+
+```
+
+## Landfill: LM on S
+```{r}
+s_result_slope <- NULL
+
+for (otu in colnames(LF_df_s)){
+  response_s <- LF_df_s[, otu]
+  s_result_slope[otu] <- summary(lm(response_s ~ week))$coefficients[2,1]
+}
+```
+
+## Landfill: LM on PSS
+```{r}
+pss_result_slope <- NULL
+
+for (otu in colnames(LF_df_pss)){
+  response_pss <- LF_df_pss[, otu]
+  pss_result_slope[otu] <- summary(lm(response_pss ~ week))$coefficients[2,1]
+}
+```
+Just look at those with bigger slope in PS, S, or PSS versus Control.
+
+## Compare PS with Ctrl
+```{r}
+compare_ps <- ps_result_slope - ctrl_result_slope
+compare_ps[order(compare_ps, decreasing = T)][1:5]
+```
+
+```{r}
+compare_s <- s_result_slope - ctrl_result_slope
+compare_s[order(compare_s, decreasing = T)][1:5]
+```
+
+```{r}
+compare_pss <- pss_result_slope - ctrl_result_slope
+compare_pss[order(compare_pss, decreasing = T)][1:5]
+```
+```{r}
+
+```
 
