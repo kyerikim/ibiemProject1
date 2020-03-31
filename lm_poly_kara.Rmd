@@ -430,22 +430,61 @@ for (otu in colnames(LF_df_pss)){
 ```
 Just look at those with bigger slope in PS, S, or PSS versus Control.
 
+Now we can find the top five OTUs from each comparison that have a bigger slope compared with Control. 
 ## Compare PS with Ctrl
 ```{r}
 compare_ps <- ps_result_slope - ctrl_result_slope
-compare_ps[order(compare_ps, decreasing = T)][1:5]
+names(compare_ps)[order(compare_ps, decreasing = T)][1:5]
 ```
 
+## Compare S with Ctrl
 ```{r}
 compare_s <- s_result_slope - ctrl_result_slope
-compare_s[order(compare_s, decreasing = T)][1:5]
+names(compare_s)[order(compare_s, decreasing = T)][1:5]
 ```
 
+## Compare PSS with Ctrl
 ```{r}
 compare_pss <- pss_result_slope - ctrl_result_slope
-compare_pss[order(compare_pss, decreasing = T)][1:5]
+names(compare_pss)[order(compare_pss, decreasing = T)][1:5]
 ```
-```{r}
 
+## ER Results
+```{r}
+# Grab OTUs from each condition and make into data frame
+ER_df_ctrl <- as.data.frame(otu_table(ER_ctrl))
+ER_df_ps <- as.data.frame(otu_table(ER_ps))
+ER_df_s <- as.data.frame(otu_table(ER_s))
+ER_df_pss <- as.data.frame(otu_table(ER_pss))
+
+# reorder data frame so that weeks are in correct order
+ER_df_ctrl <- ER_df_ctrl[c(1, 3:8, 2),]
+ER_df_ps <- ER_df_ps[c(1, 3:8, 2),]
+ER_df_s <- ER_df_s[c(1, 3:8, 2),]
+ER_df_pss <- ER_df_pss[c(1, 3:8, 2),]
+```
+
+```{r}
+week <- c(1:7, 12)
+my_comparison <- function(control_df, compare_df, top = 5){
+
+ctrl_result_slope <- NULL
+
+for (otu in colnames(control_df)){
+  response_ctrl <- control_df[, otu]
+  ctrl_result_slope[otu] <- summary(lm(response_ctrl ~ week))$coefficients[2,1]
+}
+
+compare_result_slope <- NULL
+
+for (otu in colnames(compare_df)){
+  response_compare <- compare_df[, otu]
+  compare_result_slope[otu] <- summary(lm(response_compare ~ week))$coefficients[2,1]
+}
+
+slope_diff <- compare_result_slope - ctrl_result_slope
+return(names(slope_diff)[order(compare_pss, decreasing = T)][1:top])
+
+}
 ```
 
