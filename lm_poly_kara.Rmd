@@ -103,13 +103,14 @@ LF_pss <- subset_samples(rel_ps_LF, Condition == "PSS")
 ## Subset to those with nonzero values for week 7 and 12
 We will filter out those with less than 0.1% relative abundance at weeks 7 and 12, because we want to look at those that have some substantial presence at those weeks, in order to even consider them as polystyrene degraders.
 ```{r}
-# Grab OTUs from control and make into data frame
+# Grab OTUs from each condition and make into data frame
 LF_df_ctrl <- as.data.frame(otu_table(LF_ctrl))
 LF_df_ps <- as.data.frame(otu_table(LF_ps))
 LF_df_s <- as.data.frame(otu_table(LF_s))
 LF_df_pss <- as.data.frame(otu_table(LF_pss))
 
 ```
+
 
 ```{r}
 # reorder data frame so that weeks are in correct order
@@ -119,6 +120,7 @@ LF_df_s <- LF_df_s[c(1, 3:8, 2),]
 LF_df_pss <- LF_df_pss[c(1, 3:8, 2),]
 ```
 
+
 ```{r}
 # add week as a column
 Week <- c(1:7, 12)
@@ -127,6 +129,11 @@ Week <- c(1:7, 12)
 LF_df_ctrl <- LF_df_ctrl %>%
   mutate(Week = as.factor(Week)) %>%
   select(Week, everything())
+
+```
+
+```{r}
+LF_df_ctrl
 ```
 
 ```{r}
@@ -139,6 +146,7 @@ subset <- LF_df_ctrl %>%
   filter(`Relative Abundance` > .001) 
 
 dim(subset)
+head(subset)
 
 otu_names <- unique(subset$OTU)
 length(otu_names)
@@ -174,57 +182,500 @@ ord <- order(result, decreasing = T)[1:num_above]
 
 # subset the dataframe with only those OTUs. 
 result_LF_ctrl <- LF_df_ctrl_subset[ , ord]
-
+result_LF_ctrl[,1:2]
 ```
 
 
 ## Function to find those above relative abundance threshold
 ```{r}
-# input: data frame of otu_table at site with specific condition
+# input: data frame of otu_table at specific site with specific condition
+#     - Note: columns are in the correct order in terms of weeks!
 # output: dataframe of OTUs satisfying requirement for relative abundance threshold, how many satisfy the threshold
+Week <- c(1:7, 12)
+
+# get rid of scientific notation
+options(scipen = 999)
 
 threshold_func <- function(df, threshold = .5){
+
+subset <- df %>%
+  # add week as a column
+  mutate(Week = as.factor(Week)) %>% 
   
+  # move week to the beginning of the data frame
+  select(Week, everything()) %>% 
+  
+  # convert to long format 
+  pivot_longer(-Week, 
+               
+               # change sequence column name to "OTU"
+               names_to = "OTU", 
+               
+               # change relative abundance column name to "Relative Abundance"
+               values_to = "Relative Abundance") %>%
+  
+  # for weeks 7 and 12
+  filter(Week == 7 | Week == 12) %>% 
+  
+  # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
+  filter(`Relative Abundance` > .001)
+
+# grab OTU names that met this requirement
+otu_names <- unique(subset$OTU)
+
+# how many OTUs satisfied the requriement?
+print(paste0("There are ", length(otu_names), " OTUs with > 0.1% at weeks 7 and 12."))
+
+# subset the full dataframe by only these OTUs
+df_subset <- df[ , colnames(df) %in% otu_names]
+
+# instantiate empty vector
+result <- NULL
+slope <- NULL
+
+for(otu in 2:ncol(df_subset)){
+  
+  # grab the specific OTU column as a vector
+  my_col <- as.vector(df_subset[ , otu])
+  
+  # calculate r.squared value from linear regression, put value in "result"
+  result[otu] <- round(summary(lm(my_col ~ Week))$r.squared, digits = 3)
+  slope[otu] <- round(summary(lm(my_col ~ Week))$coefficients[2, 1], digits = 3)
+}
+
+# count the number of OTUs with R-squared values above threshold (default 0.5)
+num_above <- sum(result[order(result, decreasing = T)] > threshold, na.rm = T)
+
+# how many OTUs satisfied the requriement?
+print(paste0(num_above, " of those OTUs have r.squared value > " , threshold))
+
+# grab the indices of the OTUs with R-squared values above 0.5
+ord <- order(result, decreasing = T)[1:num_above]
+
+# subset the dataframe with only those OTUs. 
+df_subset_r.squared <- df_subset[ , ord]
+
+return(list(otu_names_7_12 = otu_names,
+            r.squared.result.full = result[order(result, decreasing = T)],
+            df_subset_r.squared = df_subset_r.squared,
+            otu_names_7_12_r.squared = colnames(df_subset_r.squared)))
 }
 ```
 
-
-## test run for one iteration
 ```{r}
-# week <- c(1, 12, 2:7)
-# my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, 1])
-# fit <- lm(my_otu_y ~ week)
-# if(summary(fit)$r.squared > .5) {index <- 1
-# } else {index <- 0}
-# index
-# 
-# rsq <- NULL
-# for (i in 1:10) {
-#   my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, i])
-#   rsq[i] <- summary(lm(my_otu_y ~ week))$r.squared
-# }
-# rsq
+# small example
+x <- 1:10
+x
+y <- 2*x + rnorm(10, 0, 3)
 
-# check out the fourth one
-# my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, 4])
-# fit <- lm(my_otu_y ~ week)
-# summary(fit)
-# 
-# my_otu_y
+fit <- lm(y ~ x)
+summary(fit)$coefficients
+summary(fit)$coefficients[2,1]
+```
+
+## Landfill Results
+```{r}
+# try function on Landfill site, control condition
+result_ctrl <- threshold_func(LF_df_ctrl, threshold = 0.5)
+```
+```{r}
+# use function on Landfill site, PS condition
+result_ps <- threshold_func(LF_df_ps, threshold = 0.5)
 ```
 
 ```{r}
-# define x variable: time (weeks)
-# week <- c(1, 12, 2:7)
-# index <- rep(0, dim(otu_table(ps_LF_ctrl))[2])
-# for(i in 1:dim(otu_table(ps_LF_ctrl))[2]){
-#   # define y variable: relative abundance
-#   my_otu_y <- as.vector(otu_table(ps_LF_ctrl)[, i])
-#   fit <- lm(my_otu_y ~ week)
-#   summary <- summary(fit)
-#   if(summary(fit)$r.squared > .5) index[i] <- 1
-# }
-# sum(index)
+# use function on Landfill site, S condition
+result_s <- threshold_func(LF_df_s, threshold = 0.5)
+```
+
+```{r}
+# use function on Landfill site, PSS condition
+result_pss <- threshold_func(LF_df_s, threshold = 0.5)
+```
+
+Now, we want to see if any of the OTUs passed both sets of requirements for all four conditions. 
+```{r}
+result_pss[[4]]
+unique(c(result_ctrl[[4]],
+       result_ps[[4]],
+       result_s[[4]],
+       result_pss[[4]]))
+
+result_ctrl[[4]][result_ctrl[[4]] %in% result_ps[[4]]] %in% result_s[[4]]
+
+```
+
+So, none of the OTUs passed both sets of requirements for all four conditions.
+
+## AS Results
+We break apart the Elizabeth River (ER) phyloseq object into four categories:
+
+* Control
+* Polystyrene
+* Styrene
+* Polystyrene + Styrene
+
+```{r}
+ER_ctrl <- subset_samples(rel_ps_ER, Condition == "Ctrl")
+ER_ps <- subset_samples(rel_ps_ER, Condition == "PS")
+ER_s <- subset_samples(rel_ps_ER, Condition == "S")
+ER_pss <- subset_samples(rel_ps_ER, Condition == "PSS")
+```
+
+```{r}
+# Grab OTUs from each condition and make into data frame
+ER_df_ctrl <- as.data.frame(otu_table(ER_ctrl))
+ER_df_ps <- as.data.frame(otu_table(ER_ps))
+ER_df_s <- as.data.frame(otu_table(ER_s))
+ER_df_pss <- as.data.frame(otu_table(ER_pss))
+
+```
+
+```{r}
+# reorder data frame so that weeks are in correct order
+ER_df_ctrl <- ER_df_ctrl[c(1, 3:8, 2),]
+ER_df_ps <- ER_df_ps[c(1, 3:8, 2),]
+ER_df_s <- ER_df_s[c(1, 3:8, 2),]
+ER_df_pss <- ER_df_pss[c(1, 3:8, 2),]
+```
+
+## Elizabeth River Results
+```{r}
+# try function on Landfill site, control condition
+result_ER_ctrl <- threshold_func(ER_df_ctrl, threshold = 0.5)
+```
+```{r}
+# use function on Landfill site, PS condition
+result_ER_ps <- threshold_func(ER_df_ps, threshold = 0.5)
+```
+
+```{r}
+# use function on Landfill site, S condition
+result_ER_s <- threshold_func(ER_df_s, threshold = 0.5)
+```
+
+```{r}
+# use function on Landfill site, PSS condition
+result_ER_pss <- threshold_func(ER_df_pss, threshold = 0.5)
 ```
 
 
+```{r}
+result_ER_ctrl[[4]][result_ER_ctrl[[4]] %in% result_ER_ps[[4]]] %in% result_ER_s[[4]]
+
+```
+
+## New plan
+```{r}
+subset <- LF_df_ctrl %>%
+  # add week as a column
+  mutate(Week = as.factor(Week)) %>% 
+  
+  # move week to the beginning of the data frame
+  select(Week, everything()) %>% 
+  
+  # convert to long format 
+  pivot_longer(-Week, 
+               
+               # change sequence column name to "OTU"
+               names_to = "OTU", 
+               
+               # change relative abundance column name to "Relative Abundance"
+               values_to = "Relative Abundance") %>%
+  
+  # for weeks 7 and 12
+  filter(Week == 7 | Week == 12) %>% 
+  
+  # subset into only those OTUs with greater than 0.1% at weeks 7 and 12
+  filter(`Relative Abundance` > .001)
+
+# grab OTU names that met this requirement
+otu_names <- unique(subset$OTU)
+```
+
+## Landfill: LM on control
+```{r}
+week <- c(1:7, 12)
+ctrl_result_slope <- NULL
+
+for (otu in colnames(LF_df_ctrl)[-1]){
+  response_ctrl <- LF_df_ctrl[, otu]
+  ctrl_result_slope[otu] <- summary(lm(response_ctrl ~ week))$coefficients[2,1]
+}
+ctrl_result_slope
+```
+
+## Landfill: LM on PS
+```{r}
+ps_result_slope <- NULL
+
+for (otu in colnames(LF_df_ps)){
+  response_ps <- LF_df_ps[, otu]
+  ps_result_slope[otu] <- summary(lm(response_ps ~ week))$coefficients[2,1]
+}
+
+```
+
+## Landfill: LM on S
+```{r}
+s_result_slope <- NULL
+
+for (otu in colnames(LF_df_s)){
+  response_s <- LF_df_s[, otu]
+  s_result_slope[otu] <- summary(lm(response_s ~ week))$coefficients[2,1]
+}
+```
+
+## Landfill: LM on PSS
+```{r}
+pss_result_slope <- NULL
+
+for (otu in colnames(LF_df_pss)){
+  response_pss <- LF_df_pss[, otu]
+  pss_result_slope[otu] <- summary(lm(response_pss ~ week))$coefficients[2,1]
+}
+```
+Just look at those with bigger slope in PS, S, or PSS versus Control.
+
+Now we can find the top five OTUs from each comparison that have a bigger slope compared with Control. 
+## Compare PS with Ctrl
+```{r}
+compare_ps <- ps_result_slope - ctrl_result_slope
+names(compare_ps)[order(compare_ps, decreasing = T)][1:5]
+```
+
+## Compare S with Ctrl
+```{r}
+compare_s <- s_result_slope - ctrl_result_slope
+names(compare_s)[order(compare_s, decreasing = T)][1:5]
+```
+
+## Compare PSS with Ctrl
+```{r}
+compare_pss <- pss_result_slope - ctrl_result_slope
+names(compare_pss)[order(compare_pss, decreasing = T)][1:5]
+```
+## Plot a result from Landfill
+
+We will plot the first OTU result from Landfill, from comparing PS to Control:
+
+"CCGAGCGTTATCCGAATTCACTGGGCGTAAAGCGCGTGCAGGCGGCCGGGCAAGTTGGATGTGAAAGCTCCTGGCTCAACTGGGAGAGGACGTTCAAGACTGTTCGGCTCGAGGCCGGTAGAGGGAAGTGGAATTCCCGGTGTAGTGGTGAAATGCGTAGATATCGGGAGGAACACCAGAGGCGAAGGCGGCTTCCTGGACCGGACCTGACGCTCAGACGCGAAAGCTAGGGG"
+
+First we will add week to the PS, S, and PSS dataframes.
+
+```{r}
+# Landfill 
+LF_df_ps_wk <- LF_df_ps %>%
+  mutate(Week = as.factor(Week)) %>%
+  select(Week, everything())
+
+LF_df_pss_wk <- LF_df_pss %>%
+  mutate(Week = as.factor(Week)) %>%
+  select(Week, everything())
+
+LF_df_s_wk <- LF_df_s %>%
+  mutate(Week = as.factor(Week)) %>%
+  select(Week, everything())
+
+```
+
+```{r}
+chosen_ctrl <- LF_df_ctrl %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1])
+chosen_ctrl
+chosen_ps <-  LF_df_ps_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1])
+chosen_ps
+chosen_pss <- LF_df_pss_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1])
+chosen_s <- LF_df_s_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1])
+```
+
+
+
+```{r}
+df <- chosen_ctrl %>% 
+  left_join(chosen_ps, by = "Week") %>%
+  left_join(chosen_pss, by = "Week") %>%
+  left_join(chosen_s, by = "Week") %>%
+  mutate(OTU = names(compare_ps)[order(compare_ps, decreasing = T)][1])
+df
+```
+```{r}
+# Change column names
+colnames(df) <- c("Week", "Control", "PS", "PSS", "S", "OTU")
+df
+```
+
+```{r}
+df2 <- df %>%
+  pivot_longer(cols = Control:S, 
+               names_to = "Condition", 
+               values_to = "Relative Abundance") %>%
+  mutate(Condition = as.factor(Condition)) %>%
+  arrange(Condition, Week) 
+df2
+```
+
+Get names for the title. 
+```{r}
+king <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 1]), "\n", sep = " ")
+phy <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 2]), "\n", sep = " ")
+class <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 3]), "\n", sep = " ")
+ord <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 4]), "\n", sep = " ")
+fam <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_ps, decreasing = T)][1], ][1, 5]), "\n", sep = " ")
+
+```
+
+
+```{r}
+df2 %>% 
+  ggplot(aes(x = Week, y = `Relative Abundance`, group = Condition)) +
+  geom_line(aes(color = Condition), size = 1) +
+  geom_point(aes(color = Condition), size = 4) +
+  theme_bw() +
+  annotate("text", x = 1, y = .075, 
+           label = paste0("Taxonomic Rank: \n", 
+                          "Kingdom = ", king, 
+                          "Phylum = ", phy, 
+                          "Class = ", class,
+                          "Order = ", ord, 
+                          "Family = ", fam), 
+           hjust = 0) 
+#  ggtitle(paste0(king, phy, class, ord, fam))
+```
+
+
+
+Now, I'll try to bring the top four OTUs together in a facet-wrap by OTU.
+
+```{r}
+ss <- subset_samples(rel_ps_LF, Site = "Landfill", Condition )
+print(ss)
+```
+
+```{r}
+my_subset <- subset(otu_table(poly.ps), colnames(otu_table(poly.ps)) %in% names(compare_ps)[order(compare_ps, decreasing = T)][1:5])
+
+new_physeq <- merge_phyloseq(my_subset, tax_table(poly.ps), sample_data(poly.ps))
+```
+
+```{r}
+otu_table(ss)[, 1:3]
+```
+
+```{r}
+first_otu <- names(compare_ps)[order(compare_ps, decreasing = T)][1:4]
+chosen_ctrl_2 <- LF_df_ctrl %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4]) %>%
+  pivot_longer(cols = )
+chosen_ctrl_2
+chosen_ps_2 <-  LF_df_ps_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+chosen_ps_2
+chosen_pss_2 <- LF_df_pss_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+chosen_s_2 <- LF_df_s_wk %>%
+  select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
+```
+## ER Results
+```{r}
+# Grab OTUs from each condition and make into data frame
+ER_df_ctrl <- as.data.frame(otu_table(ER_ctrl))
+ER_df_ps <- as.data.frame(otu_table(ER_ps))
+ER_df_s <- as.data.frame(otu_table(ER_s))
+ER_df_pss <- as.data.frame(otu_table(ER_pss))
+
+# reorder data frame so that weeks are in correct order
+ER_df_ctrl <- ER_df_ctrl[c(1, 3:8, 2),]
+ER_df_ps <- ER_df_ps[c(1, 3:8, 2),]
+ER_df_s <- ER_df_s[c(1, 3:8, 2),]
+ER_df_pss <- ER_df_pss[c(1, 3:8, 2),]
+```
+
+```{r}
+
+my_comparison <- function(control_df, compare_df, top = 5){
+  
+week <- c(1:7, 12)
+ctrl_result_slope <- NULL
+
+for (otu in colnames(control_df)){
+  response_ctrl <- control_df[, otu]
+  ctrl_result_slope[otu] <- summary(lm(response_ctrl ~ week))$coefficients[2,1]
+}
+
+compare_result_slope <- NULL
+
+for (otu in colnames(compare_df)){
+  response_compare <- compare_df[, otu]
+  compare_result_slope[otu] <- summary(lm(response_compare ~ week))$coefficients[2,1]
+}
+
+slope_diff <- compare_result_slope - ctrl_result_slope
+return(names(slope_diff)[order(compare_pss, decreasing = T)][1:top])
+
+}
+```
+
+## ER
+```{r}
+my_comparison(ER_df_ctrl, ER_df_ps, top = 5)
+my_comparison(ER_df_ctrl, ER_df_s, top = 5)
+my_comparison(ER_df_ctrl, ER_df_pss, top = 5)
+```
+## AS
+```{r}
+AS_ctrl <- subset_samples(rel_ps_AS, Condition == "Ctrl")
+AS_ps <- subset_samples(rel_ps_AS, Condition == "PS")
+AS_s <- subset_samples(rel_ps_AS, Condition == "S")
+AS_pss <- subset_samples(rel_ps_AS, Condition == "PSS")
+```
+
+```{r}
+# Grab OTUs from each condition and make into data frame
+AS_df_ctrl <- as.data.frame(otu_table(AS_ctrl))
+AS_df_ps <- as.data.frame(otu_table(AS_ps))
+AS_df_s <- as.data.frame(otu_table(AS_s))
+AS_df_pss <- as.data.frame(otu_table(AS_pss))
+
+```
+
+```{r}
+# reorder data frame so that weeks are in correct order
+AS_df_ctrl <- AS_df_ctrl[c(1, 3:8, 2),]
+AS_df_ps <- AS_df_ps[c(1, 3:8, 2),]
+AS_df_s <- AS_df_s[c(1, 3:8, 2),]
+AS_df_pss <- AS_df_pss[c(1, 3:8, 2),]
+```
+
+```{r}
+my_comparison(AS_df_ctrl, AS_df_ps, top = 5)
+my_comparison(AS_df_ctrl, AS_df_s, top = 5)
+my_comparison(AS_df_ctrl, AS_df_pss, top = 5)
+```
+
+
+
+## RC
+```{r}
+RC_ctrl <- subset_samples(rel_ps_RC, Condition == "Ctrl")
+RC_ps <- subset_samples(rel_ps_RC, Condition == "PS")
+RC_s <- subset_samples(rel_ps_RC, Condition == "S")
+RC_pss <- subset_samples(rel_ps_RC, Condition == "PSS")
+```
+
+```{r}
+# Grab OTUs from each condition and make into data frame
+RC_df_ctrl <- as.data.frame(otu_table(RC_ctrl))[c(1, 3:8, 2),]
+RC_df_ps <- as.data.frame(otu_table(RC_ps))[c(1, 3:8, 2),]
+RC_df_s <- as.data.frame(otu_table(RC_s))[c(1, 3:8, 2),]
+RC_df_pss <- as.data.frame(otu_table(RC_pss))[c(1, 3:8, 2),]
+```
+
+```{r}
+my_comparison(RC_df_ctrl, RC_df_ps, top = 5)
+my_comparison(RC_df_ctrl, RC_df_s, top = 5)
+my_comparison(RC_df_ctrl, RC_df_pss, top = 5)
+```
