@@ -1,0 +1,15 @@
+INFO [2020-04-15 20:39:21] $x
+INFO [2020-04-15 20:39:21] list(ER_PSS_Degraders7, ER_PS_Degraders7, ER_S_Degraders7, ER_Ctrl_Degraders7)
+INFO [2020-04-15 20:39:21] 
+INFO [2020-04-15 20:39:21] $category.names
+INFO [2020-04-15 20:39:21] c("PSS", "PS", "S", "Ctrl")
+INFO [2020-04-15 20:39:21] 
+INFO [2020-04-15 20:39:21] $main
+INFO [2020-04-15 20:39:21] [1] "ER"
+INFO [2020-04-15 20:39:21] 
+INFO [2020-04-15 20:39:21] $filename
+INFO [2020-04-15 20:39:21] [1] "KYERI_Img/w7/#ER_venn_diagramm_th0_w7.png"
+INFO [2020-04-15 20:39:21] 
+INFO [2020-04-15 20:39:21] $output
+INFO [2020-04-15 20:39:21] [1] TRUE
+INFO [2020-04-15 20:39:21] 

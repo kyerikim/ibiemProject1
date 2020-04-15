@@ -44,7 +44,7 @@ library(vegan)
 
 ## Define Paths
 ```{r}
-poly.rds ="/sharedspace/polystyrene/demultiplexed4/dada2/ibiemProject1_subset.rds"
+poly.rds ="/sharedspace/polystyrene/demultiplexed5/dada2/ibiemProject1_subset.rds"
 #poly.rds ="/home/guest/project1_ibiem/demultiplexed3/dada2/ibiemProject1_subset.rds"
 ```
 
@@ -169,7 +169,7 @@ summary(fit)$r.squared
 ```{r}
 # paste("LF", "PS", "Degraders",sep = "_")
 ```
-
+## weed N - week 1 rel. abundance
 ```{r}
 #"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
 standardweek <-1
@@ -307,6 +307,36 @@ https://www.ebi.ac.uk/biomodels-main/path2models?about=205
 
 
 
+## linear regression testing
+```{r}
+otuTableLength <- ncol(otu_table(subset_samples(rel_ps_LF, Condition =="PS")))
+otu_df <- as.data.frame( otu_table(subset_samples(rel_ps_LF, Condition =="PS")) )
+
+head(otuTable)
+for (otulm in c(1:otuTableLength))
+    x <- c(1, 12, 2:7)
+    y <- as.vector(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])# otulm])
+    fit <- lm(y ~ x)
+    summary(fit)
+    summary(fit)$r.squared
+    otu_LF_Linear <- otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1]
+
+
+          
+# otu_LF_Conditioned <- sweep(otu_table(subset_samples(rel_ps_LF, Condition=="PS")),2,as.double(otu_table(subset_samples(rel_ps_LF, Week==standardweek & Condition=="PS"))))
+# 
+# #number of seqences
+# threshold = 0.01
+# sum(otu_LF_Conditioned[2,]>threshold)
+# 
+# #sort seq. names of "increased" OTU (Week12 - Week1)
+# a<-otu_LF_Conditioned[2,]
+# targets <- names(a[otu_LF_Conditioned[2,]>threshold])
+# 
+# target.ps <- prune_taxa(targets, subset_samples(rel_ps_LF, Condition=="PS"))
+# plot_bar(target.ps, x="Week", fill="Family") +
+#   geom_bar(stat = "identity", position = "stack", size=0)
+```
 
 
 
