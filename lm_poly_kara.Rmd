@@ -20,6 +20,8 @@ library(stringr)
 library(tidyr)
 library(magrittr)
 library(vegan)
+library(rJava)
+library(xlsx)
 ```
 
 ## Goals: 
@@ -455,7 +457,28 @@ names(compare_s)[order(compare_s, decreasing = T)][1:5]
 compare_pss <- pss_result_slope - ctrl_result_slope
 names(compare_pss)[order(compare_pss, decreasing = T)][1:5]
 ```
-## Plot a result from Landfill
+
+### Final results from LF
+What are the top performing OTUs from LF?
+
+
+```{r}
+top_LF_s <- names(compare_s)[order(compare_s, decreasing = T)][1:30]
+top_LF_ps <- names(compare_ps)[order(compare_ps, decreasing = T)][1:30]
+top_LF_pss <- names(compare_s)[order(compare_s, decreasing = T)][1:30]
+
+list_lf <- Reduce(intersect, list(top_LF_s,
+                       top_LF_ps,
+                       top_LF_pss))
+
+# grab these from the lf phyloseq object
+result_lf_df <- as.data.frame(tax_table(rel_ps_LF)[list_lf])
+
+```
+
+
+
+## Plot 1:  top result from Landfill, PS vs. Control
 
 We will plot the first OTU result from Landfill, from comparing PS to Control:
 
@@ -514,7 +537,7 @@ df2 <- df %>%
                names_to = "Condition", 
                values_to = "Relative Abundance") %>%
   mutate(Condition = as.factor(Condition)) %>%
-  arrange(Condition, Week) 
+  arrange(Condition, Week)
 df2
 ```
 
@@ -530,21 +553,385 @@ fam <- paste(as.character(tax_table(rel_ps_LF)[names(compare_ps)[order(compare_p
 
 
 ```{r}
-df2 %>% 
+library(wesanderson)
+```
+
+```{r}
+p <- df2 %>% 
   ggplot(aes(x = Week, y = `Relative Abundance`, group = Condition)) +
   geom_line(aes(color = Condition), size = 1) +
   geom_point(aes(color = Condition), size = 4) +
-  theme_bw() +
-  annotate("text", x = 1, y = .075, 
-           label = paste0("Taxonomic Rank: \n", 
-                          "Kingdom = ", king, 
-                          "Phylum = ", phy, 
-                          "Class = ", class,
-                          "Order = ", ord, 
-                          "Family = ", fam), 
-           hjust = 0) 
-#  ggtitle(paste0(king, phy, class, ord, fam))
+  geom_smooth(method="lm", se = F) +
+  theme(panel.background = element_blank()) +
+  ggtitle(paste0("Landfill:", fam, "has Increased Temporal Abundance Relative to Control")) +
+  scale_color_manual(values = wes_palette("Darjeeling1", n = 5))
+p
+
+ggsave("line_plot_lf.png", plot = last_plot(), width = 6, height = 6, units = "in")
 ```
+
+
+## Plot 2:  top result from Landfill, S vs. Control
+
+"GCAAGCGTTGTCCGGATTTATTGGGCGTAAAGGGAGCGCAGGTGGTTTCTTAAGTCTGATGTGAAAGCCCACGGCTTAACCGTGGAGGGTCATTGGAAACTGGGAAACTTGAGTACAGAAGAGGAATGTGGAACTCCATGTGTAGCGGTGGAATGCGTAGATATATGGAAGAACACCAGTGGCGAAGGCGACATTCTGGTCTGTTACTGACACTGAGGCTCGAAAGCGTGGGG"
+
+```{r}
+# example:
+# number = 1
+# which_compare = compare_s
+
+# this would plot the top (number 1) performer under the s (compare_s) condition
+
+line_plot_result <- function(number, which_compare){
+  chosen_ctrl <- LF_df_ctrl %>%
+  select(Week, names(which_compare)[order(which_compare, decreasing = T)][number])
+chosen_ctrl
+chosen_ps <-  LF_df_ps_wk %>%
+  select(Week, names(which_compare)[order(which_compare, decreasing = T)][number])
+chosen_ps
+chosen_pss <- LF_df_pss_wk %>%
+  select(Week, names(which_compare)[order(which_compare, decreasing = T)][number])
+chosen_s <- LF_df_s_wk %>%
+  select(Week, names(which_compare)[order(which_compare, decreasing = T)][number])
+
+df <- chosen_ctrl %>% 
+  left_join(chosen_ps, by = "Week") %>%
+  left_join(chosen_pss, by = "Week") %>%
+  left_join(chosen_s, by = "Week") %>%
+  mutate(OTU = names(which_compare)[order(which_compare, decreasing = T)][number])
+
+# change column names
+colnames(df) <- c("Week", "Control", "PS", "PSS", "S", "OTU")
+
+# wide to long
+df2 <- df %>%
+  pivot_longer(cols = Control:S, 
+               names_to = "Condition", 
+               values_to = "Relative Abundance") %>%
+  mutate(Condition = as.factor(Condition)) %>%
+  arrange(Condition, Week)
+
+# get names
+king <- paste(as.character(tax_table(rel_ps_LF)[names(which_compare)[order(which_compare, decreasing = T)][number], ][1, 1]), "\n", sep = " ")
+phy <- paste(as.character(tax_table(rel_ps_LF)[names(which_compare)[order(which_compare, decreasing = T)][number], ][1, 2]), "\n", sep = " ")
+class <- paste(as.character(tax_table(rel_ps_LF)[names(which_compare)[order(which_compare, decreasing = T)][number], ][1, 3]), "\n", sep = " ")
+ord <- paste(as.character(tax_table(rel_ps_LF)[names(which_compare)[order(which_compare, decreasing = T)][number], ][1, 4]), "\n", sep = " ")
+fam <- paste(as.character(tax_table(rel_ps_LF)[names(which_compare)[order(which_compare, decreasing = T)][number], ][1, 5]), "\n", sep = " ")
+
+p2 <- df2 %>% 
+  ggplot(aes(x = Week, y = `Relative Abundance`, group = Condition)) +
+  geom_line(aes(color = Condition), size = 1) +
+  geom_point(aes(color = Condition), size = 4) +
+  theme(panel.background = element_blank()) +
+  ggtitle(paste0("Landfill:", fam, "has Increased Temporal Abundance Relative to Control")) +
+  scale_color_manual(values = wes_palette("Darjeeling1", n = 5))
+
+print(paste(king, phy, class, ord, fam, sep = " "))
+
+return(p2)
+}
+```
+
+```{r}
+line_plot_result(number = 1, which_compare = compare_s)
+
+```
+
+
+
+
+```{r}
+chosen_ctrl <- LF_df_ctrl %>%
+  select(Week, names(compare_s)[order(compare_s, decreasing = T)][1])
+chosen_ctrl
+chosen_ps <-  LF_df_ps_wk %>%
+  select(Week, names(compare_s)[order(compare_s, decreasing = T)][1])
+chosen_ps
+chosen_pss <- LF_df_pss_wk %>%
+  select(Week, names(compare_s)[order(compare_s, decreasing = T)][1])
+chosen_s <- LF_df_s_wk %>%
+  select(Week, names(compare_s)[order(compare_s, decreasing = T)][1])
+
+df <- chosen_ctrl %>% 
+  left_join(chosen_ps, by = "Week") %>%
+  left_join(chosen_pss, by = "Week") %>%
+  left_join(chosen_s, by = "Week") %>%
+  mutate(OTU = names(compare_s)[order(compare_s, decreasing = T)][1])
+
+# change column names
+colnames(df) <- c("Week", "Control", "PS", "PSS", "S", "OTU")
+
+# wide to long
+df2 <- df %>%
+  pivot_longer(cols = Control:S, 
+               names_to = "Condition", 
+               values_to = "Relative Abundance") %>%
+  mutate(Condition = as.factor(Condition)) %>%
+  arrange(Condition, Week)
+
+# get names
+king <- paste(as.character(tax_table(rel_ps_LF)[names(compare_s)[order(compare_s, decreasing = T)][1], ][1, 1]), "\n", sep = " ")
+phy <- paste(as.character(tax_table(rel_ps_LF)[names(compare_s)[order(compare_s, decreasing = T)][1], ][1, 2]), "\n", sep = " ")
+class <- paste(as.character(tax_table(rel_ps_LF)[names(compare_s)[order(compare_s, decreasing = T)][1], ][1, 3]), "\n", sep = " ")
+ord <- paste(as.character(tax_table(rel_ps_LF)[names(compare_s)[order(compare_s, decreasing = T)][1], ][1, 4]), "\n", sep = " ")
+fam <- paste(as.character(tax_table(rel_ps_LF)[names(compare_s)[order(compare_s, decreasing = T)][1], ][1, 5]), "\n", sep = " ")
+
+p2 <- df2 %>% 
+  ggplot(aes(x = Week, y = `Relative Abundance`, group = Condition)) +
+  geom_line(aes(color = Condition), size = 1) +
+  geom_point(aes(color = Condition), size = 4) +
+  theme(panel.background = element_blank()) +
+  ggtitle(paste0("Landfill:", fam, "has Increased Temporal Abundance Relative to Control")) +
+  scale_color_manual(values = wes_palette("Darjeeling1", n = 5))
+p2
+
+ggsave("line_plot_lf_s1.png", plot = last_plot(), width = 6, height = 6, units = "in")
+```
+
+
+
+
+What were our top performing families from landfill?
+```{r}
+full_lf_results_family <- c(
+  as.character(tax_table(rel_ps_LF)[names(compare_s)][order(compare_s, decreasing = T)][,5][1:20]),
+  as.character(tax_table(rel_ps_LF)[names(compare_ps)][order(compare_ps, decreasing = T)][,5][1:20]),
+  as.character(tax_table(rel_ps_LF)[names(compare_pss)][order(compare_pss, decreasing = T)][,5][1:20])
+)
+full_lf_results_family
+
+"Intrasporanglaceae" %in% full_lf_results_family
+"Dysgonomonadaceae" %in% full_lf_results_family
+"Corynebacteriaceae" %in% full_lf_results_family  # this one is there!!
+"Actinomycetaceae" %in% full_lf_results_family  # This one is there!!
+
+which(full_lf_results_family == "Corynebacteriaceae")
+which(full_lf_results_family == "Actinomycetaceae")
+```
+Now let's plot the line plots for families: "Corynebacteriaceae" and "Actinomycetaceae"
+
+"Corynebacteriaceae" is number 5 in LF, which means it came from the "compare_s" group. 
+```{r}
+line_plot_result(number = 5, which_compare = compare_s)
+ggsave("coryne_lf_s_5.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+
+```{r}
+line_plot_result(number = 11, which_compare = compare_s)
+ggsave("coryne_lf_s_11.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+```{r}
+line_plot_result(number = 16, which_compare = compare_pss)
+ggsave("coryne_lf_pss_16.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+
+Now, let's plot the other family that did well in landfill. 
+```{r}
+which(full_lf_results_family == "Actinomycetaceae")
+```
+These numbers mean we need to plot:
+
+* 10 from compare_s
+* 12 from compare_s
+* 10 from compare_pss
+* 19 from compare_pss
+
+```{r}
+line_plot_result(number = 10, which_compare = compare_s)
+ggsave("actino_lf_s_10.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+```{r}
+line_plot_result(number = 12, which_compare = compare_s)
+ggsave("actino_lf_s_12.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+
+```{r}
+line_plot_result(number = 10, which_compare = compare_pss)
+ggsave("actino_lf_pss_10.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+```{r}
+line_plot_result(number = 19, which_compare = compare_pss)
+ggsave("actino_lf_pss_19.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/two_families_LF_plots/")
+```
+
+
+## Kyeri's top performers
+```{r}
+kyeri <- readRDS("w7_PSS+PS+S-Ctrl.rds")
+```
+
+```{r}
+kyeri
+```
+```{r}
+tax_table(kyeri)
+```
+
+From Kyeri's results, I need to look for any hits from Families:
+* "Promicromonosporaceae"
+* "Pseudonocardiaceae"
+
+and from genus:
+* "Cellulosimicrobium"
+* "Pseudonocardia", 
+
+respectively. 
+
+```{r}
+first <- subset_taxa(kyeri, Genus == "Cellulosimicrobium")
+tax_table(first)
+
+df <- sample_data(first)
+# calculate relative abundance
+rel_first <-transform_sample_counts(first, function(OTU) OTU/sum(OTU))
+
+```
+
+```{r}
+sample_data_first_id <- as.data.frame(sample_data(rel_first)) %>%
+  mutate(id = rownames(.)) %>%
+  select(id, Week, Location, Condition) 
+
+sample_data_first_id
+```
+```{r}
+otu_first_kyeri <- as.data.frame(otu_table(first))
+otu_1 <- otu_first_kyeri %>%
+  mutate(id = rownames(.)) %>%
+  select(id, everything())
+otu_1
+```
+merge!!!
+```{r}
+plot_dat_first <- otu_1 %>%
+  left_join(sample_data_first_id, by = "id") %>%
+  mutate(Condition = factor(Condition))
+
+
+colnames(plot_dat_first)[2] <- "rel_abund"
+plot_dat_first
+```
+
+```{r}
+
+plot_dat_first %>%
+  ggplot(aes(x = Week, y = rel_abund, color = Condition)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Cellulosimicrobium")
+
+ggsave("Cellulosimicrobium.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/Kyeri_two_scratch/")
+```
+
+### kyeri's second one!
+```{r}
+second <- subset_taxa(kyeri, Genus == "Pseudonocardia")
+
+df_2 <- sample_data(second)
+# calculate relative abundance
+rel_second <-transform_sample_counts(second, function(OTU) OTU/sum(OTU))
+
+sample_data_second_id <- as.data.frame(sample_data(rel_second)) %>%
+  mutate(id = rownames(.)) %>%
+  select(id, Week, Location, Condition) 
+
+otu_second_kyeri <- as.data.frame(otu_table(second))
+otu_2 <- otu_second_kyeri %>%
+  mutate(id = rownames(.)) %>%
+  select(id, everything())
+otu_2
+
+plot_dat_second <- otu_2 %>%
+  left_join(sample_data_second_id, by = "id") %>%
+  mutate(Condition = factor(Condition))
+
+colnames(plot_dat_second)[2] <- "rel_abund"
+plot_dat_second
+
+plot_dat_second %>%
+  ggplot(aes(x = Week, y = rel_abund, color = Condition)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Pseudonocardia")
+
+ggsave("Pseudonocardia.png", 
+       plot = last_plot(), 
+       width = 6, 
+       height = 6, 
+       units = "in",
+       path = "~/ibiemProject1/Kyeri_two_scratch/")
+```
+
+
+
+
+
+### scratchh
+Let's look in landfill results for family matches:
+```{r}
+"Promicromonosporaceae" %in% full_lf_results_family
+"Pseudonocardiaceae" %in% full_lf_results_family
+
+```
+
+Let's look at the top 50 GENUS:
+```{r}
+full_lf_results_family_top50 <- c(
+  as.character(tax_table(rel_ps_LF)[names(compare_s)][order(compare_s, decreasing = T)][,6][1:50]),
+  as.character(tax_table(rel_ps_LF)[names(compare_ps)][order(compare_ps, decreasing = T)][,6][1:50]),
+  as.character(tax_table(rel_ps_LF)[names(compare_pss)][order(compare_pss, decreasing = T)][,6][1:50])
+)
+
+"Cellulosimicrobium" %in% full_lf_results_family_top50
+"Pseudonocardia" %in% full_lf_results_family_top50
+```
+
+They were't found, so I'll just try to plot these from scratch
+
+
+
+
+
 
 
 
@@ -579,6 +966,8 @@ chosen_pss_2 <- LF_df_pss_wk %>%
 chosen_s_2 <- LF_df_s_wk %>%
   select(Week, names(compare_ps)[order(compare_ps, decreasing = T)][1:4])
 ```
+
+
 ## ER Results
 ```{r}
 # Grab OTUs from each condition and make into data frame
@@ -614,16 +1003,25 @@ for (otu in colnames(compare_df)){
 }
 
 slope_diff <- compare_result_slope - ctrl_result_slope
-return(names(slope_diff)[order(compare_pss, decreasing = T)][1:top])
+return(names(slope_diff)[order(slope_diff, decreasing = T)][1:top])
 
 }
 ```
 
 ## ER
 ```{r}
-my_comparison(ER_df_ctrl, ER_df_ps, top = 5)
-my_comparison(ER_df_ctrl, ER_df_s, top = 5)
-my_comparison(ER_df_ctrl, ER_df_pss, top = 5)
+er_result_ps <- my_comparison(ER_df_ctrl, ER_df_ps, top = 30)
+er_result_s <-my_comparison(ER_df_ctrl, ER_df_s, top = 30)
+er_result_pss <-my_comparison(ER_df_ctrl, ER_df_pss, top = 30)
+
+
+list_er <- Reduce(intersect, list(er_result_ps,
+                       er_result_s,
+                       er_result_pss))
+list_er
+# grab these from the lf phyloseq object
+result_er_df <- as.data.frame(tax_table(rel_ps_ER))[list_er, ]
+result_er_df
 ```
 ## AS
 ```{r}
@@ -650,10 +1048,19 @@ AS_df_s <- AS_df_s[c(1, 3:8, 2),]
 AS_df_pss <- AS_df_pss[c(1, 3:8, 2),]
 ```
 
+### final results from AS
 ```{r}
-my_comparison(AS_df_ctrl, AS_df_ps, top = 5)
-my_comparison(AS_df_ctrl, AS_df_s, top = 5)
-my_comparison(AS_df_ctrl, AS_df_pss, top = 5)
+AS_top_ps <- my_comparison(AS_df_ctrl, AS_df_ps, top = 30)
+AS_top_s <- my_comparison(AS_df_ctrl, AS_df_s, top = 30)
+AS_top_pss <- my_comparison(AS_df_ctrl, AS_df_pss, top = 30)
+
+list_AS <- Reduce(intersect, list(AS_top_ps,
+                       AS_top_s,
+                       AS_top_pss))
+
+# grab these from the lf phyloseq object
+result_AS_df <- as.data.frame(tax_table(rel_ps_AS)[list_AS])
+result_AS_df
 ```
 
 
@@ -674,8 +1081,38 @@ RC_df_s <- as.data.frame(otu_table(RC_s))[c(1, 3:8, 2),]
 RC_df_pss <- as.data.frame(otu_table(RC_pss))[c(1, 3:8, 2),]
 ```
 
+### final results from RC
 ```{r}
-my_comparison(RC_df_ctrl, RC_df_ps, top = 5)
-my_comparison(RC_df_ctrl, RC_df_s, top = 5)
-my_comparison(RC_df_ctrl, RC_df_pss, top = 5)
+RC_top_ps <- my_comparison(RC_df_ctrl, RC_df_ps, top = 30)
+RC_top_s <- my_comparison(RC_df_ctrl, RC_df_s, top = 30)
+RC_top_pss <- my_comparison(RC_df_ctrl, RC_df_pss, top = 30)
+
+
+list_RC <- Reduce(intersect, list(RC_top_ps,
+                       RC_top_s,
+                       RC_top_pss))
+
+# grab these from the lf phyloseq object
+result_RC_df <- as.data.frame(tax_table(rel_ps_RC))[list_RC, ]
+result_RC_df
 ```
+
+### write to csv!
+```{r}
+write_csv(result_lf_df, "~/ibiemProject1/lm_results_final_kara/LF.csv")
+write_csv(result_er_df, "~/ibiemProject1/lm_results_final_kara/ER.csv")
+write_csv(result_AS_df, "~/ibiemProject1/lm_results_final_kara/AS.csv")
+write_csv(result_RC_df, "~/ibiemProject1/lm_results_final_kara/RC.csv")
+```
+
+### create phyloseq object
+```{r}
+lm_candidates <- prune_taxa(c(list_RC,
+                      list_AS,
+                      list_er,
+                      list_lf), poly.ps)
+print(lm_candidates)
+saveRDS(lm_candidates, file = "lm_candidates.rds")
+```
+
+
