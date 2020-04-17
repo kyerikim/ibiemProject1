@@ -54,6 +54,7 @@ Load your phyloseq RDS and `print` it just to be sure things look sane
 poly.ps = read_rds(poly.rds)
 print(poly.ps)
 ```
+## Subset by location
 ```{r}
 ps_LF <- subset_samples(poly.ps, Location=="LF")
 ps_ER <- subset_samples(poly.ps, Location=="ER")
@@ -64,9 +65,8 @@ ps_ER
 ps_AS
 ps_RC
 ```
-
+# landfill relative abundance plot
 ```{r}
-# # landfill relative abundance plot
 # rel_abund_func <- function(ps, level, top){
 #   top20 <- names(sort(taxa_sums(ps), decreasing=TRUE))[1:top]
 # ps.top20 <- transform_sample_counts(ps, function(OTU) OTU/sum(OTU))
@@ -87,6 +87,8 @@ ps_RC
 # rel_abund_func(ps_AS, "Family", 20)
 # rel_abund_func(ps_RC, "Family", 20)
 ```
+
+## Transform OTU -> relative OTU
 ```{r}
 rel_ps_LF <-transform_sample_counts(ps_LF, function(OTU) OTU/sum(OTU))
 rel_ps_ER <-transform_sample_counts(ps_ER, function(OTU) OTU/sum(OTU))
@@ -95,60 +97,24 @@ rel_ps_RC <-transform_sample_counts(ps_RC, function(OTU) OTU/sum(OTU))
 
 as.data.frame(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])
 ```
+## Plot a specific taxa
 ```{r}
-z <- as.data.frame(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])
-x <- c(1, 12, 2:7)
-y <- unlist(as.vector(z))
-y
-typeof(y)
-fit <- lm(y ~ x)
-plot(x, y)
-summary(fit)
+#taxa table has the information of each OTU
+tax_table(rel_ps_LF)[1,]
 
-x <- 1:10
-y <- rnorm(10)
-fit <- lm(y ~ x)
-summary(fit)
-names(summary(fit))
-summary(fit)$r.squared
+Pseudo <- subset_taxa(rel_ps_LF, Order=="Pseudomonadales")
+plot_bar(Pseudo, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+
+  facet_wrap(~Condition, nrow=1) +
+  ggtitle("Pseudomonadales in LF")
+
+plot_bar(Pseudo, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+
+  facet_wrap(~Condition, nrow=1) +
+  ggtitle("Pseudomonadales in LF")
 ```
 
-
-## linear regression testing
+# sweep func test: substract row-wise with a vector
 ```{r}
-otu_df <- as.data.frame( otu_table(subset_samples(rel_ps_LF, Condition =="PS")) )
-otu_df3<- otu_df[,1:3]
-otu_df3
-x <- c(1, 12, 2:7)
-fit <- lm(otu_df3 ~ x)
-    
-for (otulm in c(1:ncol(otu_df)))
-    x <- c(1, 12, 2:7)
-    y <- as.vector(otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1])# otulm])
-    fit <- lm(y ~ x)
-    summary(fit)
-    summary(fit)$r.squared
-    otu_LF_Linear <- otu_table(subset_samples(rel_ps_LF, Condition =="PS"))[ , 1]
-
-
-          
-# otu_LF_Conditioned <- sweep(otu_table(subset_samples(rel_ps_LF, Condition=="PS")),2,as.double(otu_table(subset_samples(rel_ps_LF, Week==standardweek & Condition=="PS"))))
 # 
-# #number of seqences
-# threshold = 0.01
-# sum(otu_LF_Conditioned[2,]>threshold)
-# 
-# #sort seq. names of "increased" OTU (Week12 - Week1)
-# a<-otu_LF_Conditioned[2,]
-# targets <- names(a[otu_LF_Conditioned[2,]>threshold])
-# 
-# target.ps <- prune_taxa(targets, subset_samples(rel_ps_LF, Condition=="PS"))
-# plot_bar(target.ps, x="Week", fill="Family") +
-#   geom_bar(stat = "identity", position = "stack", size=0)
-```
-
-```{r}
-# #sweep: substract row-wise with a vector
 # standardweek <-1
 # otu_LF_Conditioned <- sweep(otu_table(subset_samples(rel_ps_LF, Condition=="PS")),2,as.double(otu_table(subset_samples(rel_ps_LF, Week==standardweek & Condition=="PS"))))
 # 
@@ -166,34 +132,30 @@ for (otulm in c(1:ncol(otu_df)))
 
 ```
 ```{r}
-# standardweek <-1
-# threshold = 0.01
-# 
-# for (cond in c("PS", "PSS","S", "Ctrl")) {
-# #sweep: substract row-wise with a vector
-# otu_LF_Conditioned <- sweep(otu_table(subset_samples(rel_ps_LF, Condition==cond)),2,as.double(otu_table(subset_samples(rel_ps_LF, Week==standardweek & Condition==cond))))
-# 
-# #number of seqences
-# sum(otu_LF_Conditioned[2,]>threshold)
-# 
-# #sort seq. names of "increased" OTU (Week12 - Week1)
-# a<-otu_LF_Conditioned[2,]
-# targets <- names(a[otu_LF_Conditioned[2,]>threshold])
-# 
-# target.ps <- prune_taxa(targets, subset_samples(rel_ps_LF, Condition==cond))
-# print( plot_bar(target.ps, x="Week", fill="Family") + 
-#   geom_bar(stat = "identity", position = "stack", size=0) 
-# )
-# }
+standardweek <-1
+threshold = 0.01
+
+for (cond in c("PS", "PSS","S", "Ctrl")) {
+#sweep: substract row-wise with a vector
+otu_LF_Conditioned <- sweep(otu_table(subset_samples(rel_ps_LF, Condition==cond)),2,as.double(otu_table(subset_samples(rel_ps_LF, Week==standardweek & Condition==cond))))
+
+#number of seqences
+sum(otu_LF_Conditioned[2,]>threshold)
+
+#sort seq. names of "increased" OTU (Week12 - Week1)
+a<-otu_LF_Conditioned[2,]
+targets <- names(a[a>threshold])
+
+target.ps <- prune_taxa(targets, subset_samples(rel_ps_LF, Condition==cond))
+print( plot_bar(target.ps, x="Week", fill="Family") +
+  geom_bar(stat = "identity", position = "stack", size=0)
+)
+}
 ```
-```{r}
-# assign(paste("LF", "PS", sep = "_"), c(1:5))
-# c("LF", "ER", "AS","RC" )[1]
-```
-```{r}
-# paste("LF", "PS", "Degraders",sep = "_")
-```
-## weed N - week 1 rel. abundance
+
+
+
+## weed N - week 1 rel. abundance in for loop
 ```{r}
 #"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
 standardweek <-1
@@ -209,124 +171,233 @@ for (loc_ps in c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)){
     #number of seqences
     # sum(otu_Conditioned[2,]>threshold)
     
-    #sort seq. names of "increased" OTU (Week12 - Week1)
+    #sort seq. names of "increased" OTU (Week12 - Week1) : 
+    # Week 12 = [2, ] Week7 = [8,]
     a<-otu_Conditioned[2,]
+    b<-otu_Conditioned[8,]
     
     #assign target variable name by location and condition for further use: names will be used
     # assign(paste(loc, cond, "Degraders", sep = "_"), c(names(a[otu_Conditioned[2,]>threshold])))
-    targets <- names(a[otu_Conditioned[2,]>threshold])
+    targets_a <- names(a[a>threshold])
+    targets_b <- names(b[b>threshold])
     
-    target.ps <- prune_taxa(targets, subset_samples(loc_ps, Condition==cond))
-    plot <- plot_bar(target.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)
-    assign(paste(loc, cond, "Degraders", sep = "_"), targets)
-    assign(paste(loc, cond, "Plot", sep = "_"), plot)
+    target_a.ps <- prune_taxa(targets_a, subset_samples(loc_ps, Condition==cond))
+    target_b.ps <- prune_taxa(targets_b, subset_samples(loc_ps, Condition==cond))
+    assign(paste(loc, cond, "Degraders12", sep = "_"), targets_a)
+    assign(paste(loc, cond, "Degraders7", sep = "_"), targets_b)
     
+    # plot12 <- plot_bar(target_a.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)
+    # plot7  <- plot_bar(target_b.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)
+    # assign(paste(loc, cond, "Plot12", sep = "_"), plot12)
+    # assign(paste(loc, cond, "Plot7", sep = "_"), plot7)
     }
 }
 ```
+## Check the assinged plot name/otu
 ```{r}
-LF_PSS_Degraders
-#"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
-LF_PS_Plot
-LF_PSS_Plot
-LF_S_Plot
-LF_Ctrl_Plot
+head(LF_PSS_Degraders12)
+
+head(LF_PSS_Degraders7)
+# #"LF", "ER", "AS","RC"   c(rel_ps_LF, rel_ps_ER, rel_ps_AS, rel_ps_RC)
+# LF_PS_Plot
+# LF_PSS_Plot
+# LF_S_Plot
+# LF_Ctrl_Plot
+# rel_ps_LF[,1]
 ```
+
+## Generate VennDiagram Week12=Week1
 ```{r}
 # install.packages("VennDiagram")
 library(VennDiagram)
 
 # Chart
 venn.diagram(
-  x = list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders, LF_Ctrl_Degraders),
+  x = list(LF_PSS_Degraders12, LF_PS_Degraders12, LF_S_Degraders12, LF_Ctrl_Degraders12),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "LF",
-  filename = 'KYERI_Img/#LF_venn_diagramm_th0.png',
+  filename = 'KYERI_Img/w12/#LF_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
-  x = list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders, AS_Ctrl_Degraders),
+  x = list(AS_PSS_Degraders12, AS_PS_Degraders12, AS_S_Degraders12, AS_Ctrl_Degraders12),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "AS",
-  filename = 'KYERI_Img/#AS_venn_diagramm_th0.png',
+  filename = 'KYERI_Img/w12/#AS_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
-  x = list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders, RC_Ctrl_Degraders),
+  x = list(RC_PSS_Degraders12, RC_PS_Degraders12, RC_S_Degraders12, RC_Ctrl_Degraders12),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "RC",
-  filename = 'KYERI_Img/#RC_venn_diagramm_th0.png',
+  filename = 'KYERI_Img/w12/#RC_venn_diagramm_th0.png',
   output=TRUE
 )
 venn.diagram(
-  x = list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders, ER_Ctrl_Degraders),
+  x = list(ER_PSS_Degraders12, ER_PS_Degraders12, ER_S_Degraders12, ER_Ctrl_Degraders12),
   category.names = c("PSS" , "PS" , "S", "Ctrl"),
   main = "ER",
-  filename = 'KYERI_Img/#ER_venn_diagramm_th0.png',
+  filename = 'KYERI_Img/w12/#ER_venn_diagramm_th0.png',
   output=TRUE
 )
 ```
+
+## Generate VennDiagram Week12=Week1
 ```{r}
-# intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
-intersect(LF_PSS_Degraders, LF_PS_Degraders)
+# install.packages("VennDiagram")
+library(VennDiagram)
+
+# Chart
+venn.diagram(
+  x = list(LF_PSS_Degraders7, LF_PS_Degraders7, LF_S_Degraders7, LF_Ctrl_Degraders7),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "LF",
+  filename = 'KYERI_Img/w7/#LF_venn_diagramm_th0.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(AS_PSS_Degraders7, AS_PS_Degraders7, AS_S_Degraders7, AS_Ctrl_Degraders7),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "AS",
+  filename = 'KYERI_Img/w7/#AS_venn_diagramm_th0.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(RC_PSS_Degraders7, RC_PS_Degraders7, RC_S_Degraders7, RC_Ctrl_Degraders7),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "RC",
+  filename = 'KYERI_Img/w7/#RC_venn_diagramm_th0.png',
+  output=TRUE
+)
+venn.diagram(
+  x = list(ER_PSS_Degraders7, ER_PS_Degraders7, ER_S_Degraders7, ER_Ctrl_Degraders7),
+  category.names = c("PSS" , "PS" , "S", "Ctrl"),
+  main = "ER",
+  filename = 'KYERI_Img/w7/#ER_venn_diagramm_th0.png',
+  output=TRUE
+)
 ```
+
+
+## Intersect function (to find commons) & setdiff fuction (to get rid of commons in groups)
+
 ```{r}
 intS <-c(intersect(c(1:10), c(5:15)))
 intS
 setdiff(intS, c(7:10))
 ```
-
-
 ```{r}
-aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders))#, LF_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, LF_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_LF))
-plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0)
-
-aa <- Reduce(intersect, list(LF_PSS_Degraders, LF_PS_Degraders, LF_S_Degraders))#, LF_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, LF_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_LF))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-
-
-aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, RC_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
-plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-aa <- Reduce(intersect, list(RC_PSS_Degraders, RC_PS_Degraders, RC_S_Degraders))#, RC_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, RC_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_RC))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-
-
-aa <- Reduce(intersect, list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders))#, AS_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, AS_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_AS))
-plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-aa <- Reduce(intersect, list(AS_PSS_Degraders, AS_PS_Degraders, AS_S_Degraders))#, AS_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, AS_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_AS))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-
-
-aa <- Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders))#, ER_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, ER_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
-plot_bar(Degrader.ps, x="Week", fill="Species") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
-aa <- Reduce(intersect, list(ER_PSS_Degraders, ER_PS_Degraders, ER_S_Degraders))#, ER_Ctrl_Degraders)) #still working on 3 common - Ctrl#
-bb <- setdiff(aa, ER_Ctrl_Degraders)
-Degrader.ps <- prune_taxa(aa, subset_samples(rel_ps_ER))
-plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0) + scale_x_discrete(limits=c(1:7,12))
-
+# intersect_taxa(LF_PSS_Degraders, LF_PS_Degraders)
+intersect(LF_PSS_Degraders12, LF_PS_Degraders12)
 
 ```
 
+
+
+
+
+
+## Landfill 
+```{r}
+#week 12
+aa <- Reduce(intersect, list(LF_PSS_Degraders12, LF_PS_Degraders12, LF_S_Degraders12)) # 3 common - Ctrl#
+bb <- setdiff(aa, LF_Ctrl_Degraders12)
+length(bb) 
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+tax_table(Degrader.ps)# the only one hit - no assigned genus
+plot_bar(Degrader.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w12/#LF_PS+PSS+S-C.png")
+
+#week7
+aa <- Reduce(intersect, list(LF_PSS_Degraders7, LF_PS_Degraders7, LF_S_Degraders7)) # 3 common - Ctrl#
+bb <- setdiff(aa, LF_Ctrl_Degraders7)
+
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+Degrader.ps
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w7/#LF_PS+PSS+S-C.png")
+
+
+# PS & PSS but not in S &Ctrl
+aa <- Reduce(intersect, list(LF_PSS_Degraders7, LF_PS_Degraders7)) # 3 common - Ctrl#
+bb <- setdiff(aa, LF_Ctrl_Degraders7)
+bb <- setdiff(bb, LF_S_Degraders7)
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+Degrader.ps
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+```
+## ER
+```{r}
+#week 12
+aa <- Reduce(intersect, list(ER_PSS_Degraders12, ER_PS_Degraders12, ER_S_Degraders12)) # 3 common - Ctrl#
+bb <- setdiff(aa, ER_Ctrl_Degraders12)
+length(bb) 
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+tax_table(Degrader.ps)# the only one hit - no assigned famiy
+plot_bar(Degrader.ps, x="Week", fill="Order") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w12/#ER_PS+PSS+S-C.png")
+
+#week7
+aa <- Reduce(intersect, list(ER_PSS_Degraders7, ER_PS_Degraders7, ER_S_Degraders7)) # 3 common - Ctrl#
+bb <- setdiff(aa, ER_Ctrl_Degraders7)
+
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+Degrader.ps
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w7/#ER_PS+PSS+S-C.png")
+
+# bb <- setdiff(ER_PS_Degraders7, ER_Ctrl_Degraders7)
+# Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+# plot_bar(Degrader.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+```
+## AS
+```{r}
+#week 12
+aa <- Reduce(intersect, list(AS_PSS_Degraders12, AS_PS_Degraders12, AS_S_Degraders12)) # 3 common - Ctrl#
+bb <- setdiff(aa, AS_Ctrl_Degraders12)
+length(bb) 
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+tax_table(Degrader.ps)# the only one hit - no assigned famiy
+plot_bar(Degrader.ps, x="Week", fill="Order") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w12/#AS_PS+PSS+S-C.png")
+
+#week7
+aa <- Reduce(intersect, list(AS_PSS_Degraders7, AS_PS_Degraders7, AS_S_Degraders7)) # 3 common - Ctrl#
+bb <- setdiff(aa, AS_Ctrl_Degraders7)
+
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+Degrader.ps
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w7/#AS_PS+PSS+S-C.png")
+
+bb <- setdiff(AS_PS_Degraders7, AS_Ctrl_Degraders7)
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+plot_bar(Degrader.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+```
+## RC
+```{r}
+#week 12
+aa <- Reduce(intersect, list(RC_PSS_Degraders12, RC_PS_Degraders12, RC_S_Degraders12)) # 3 common - Ctrl#
+bb <- setdiff(aa, RC_Ctrl_Degraders12)
+length(bb) 
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+tax_table(Degrader.ps)# the only one hit - no assigned famiy
+plot_bar(Degrader.ps, x="Week", fill="Order") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w12/#RC_PS+PSS+S-C.png")
+
+#week7
+aa <- Reduce(intersect, list(RC_PSS_Degraders7, RC_PS_Degraders7, RC_S_Degraders7)) # 3 common - Ctrl#
+bb <- setdiff(aa, RC_Ctrl_Degraders7)
+
+Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+Degrader.ps
+plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+ggsave("KYERI_Img/w7/#RC_PS+PSS+S-C.png")
+
+# bb <- setdiff(RC_PS_Degraders7, RC_Ctrl_Degraders7)
+# Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+# plot_bar(Degrader.ps, x="Week", fill="Family") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+```
 https://www.ebi.ac.uk/biomodels-main/path2models?about=205
 
 
