@@ -1,0 +1,78 @@
+## Load Libraries
+```{r}
+library(readr)
+library(phyloseq)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(magrittr)
+library(vegan)
+```
+
+# Common taxa was generated from Finding Degrader files
+```{r}
+# #week7
+# aa <- Reduce(intersect, list(RC_PSS_Degraders7, RC_PS_Degraders7, RC_S_Degraders7)) # 3 common - Ctrl#
+# bb <- setdiff(aa, RC_Ctrl_Degraders7)
+# 
+# Degrader.ps <- prune_taxa(bb, subset_samples(rel_ps_LF))
+# Degrader.ps
+# plot_bar(Degrader.ps, x="Week", fill="Genus") +  geom_bar(stat = "identity", position = "stack", size=0)+ scale_x_discrete(limits=c(1:7,12))+theme_bw()
+# ggsave("KYERI_Img/w7/#RC_PS+PSS+S-C.png")
+# saveRDS(Degrader.ps, file = "w7_RC_PSS+PS+S-Ctrl.rds")
+```
+
+# Load each rds and merge, save as one file
+```{r}
+LF <- readRDS("w7_LF_PSS+PS+S-Ctrl.rds")
+RC <- readRDS("w7_RC_PSS+PS+S-Ctrl.rds")
+ER <- readRDS("w7_ER_PSS+PS+S-Ctrl.rds")
+AS <- readRDS("w7_AS_PSS+PS+S-Ctrl.rds")
+
+two_w7_candidates.ps <- merge_phyloseq(LF, RC, ER, AS)
+saveRDS(two_w7_candidates.ps, file = "two_w7_candidates.rds")
+
+```
+
+```{r}
+readRDS("two_w7_candidates.rds")
+```
+
+
+```{r}
+df <- as.data.frame(as.vector(tax_table(two_w7_candidates.ps)[,1]))
+names(df)<- "Kingdom"
+df$Phylum <-as.vector(tax_table(two_w7_candidates.ps)[,2])
+df$Class  <-as.vector(tax_table(two_w7_candidates.ps)[,3]) 
+df$Order  <-as.vector(tax_table(two_w7_candidates.ps)[,4])
+df$Family <-as.vector(tax_table(two_w7_candidates.ps)[,5])
+df$Genus  <-as.vector(tax_table(two_w7_candidates.ps)[,6])
+df$Species <-as.vector(tax_table(two_w7_candidates.ps)[,7])
+```
+```{r}
+write.csv(df, "two_w7_candidates.csv")
+```
+
+
+## Try to make phy_tree from now on
+## Define Paths
+```{r}
+poly.rds ="/sharedspace/polystyrene/demultiplexed5/dada2/ibiemProject1_subset.rds"
+#poly.rds ="/home/guest/project1_ibiem/demultiplexed3/dada2/ibiemProject1_subset.rds"
+```
+
+## Check Phyloseq RDS
+Load your phyloseq RDS and `print` it just to be sure things look sane
+```{r}
+poly.ps = read_rds(poly.rds)
+print(poly.ps)
+```
+
+```{r}
+poly.ps <-transform_sample_counts(poly.ps, function(OTU) OTU/sum(OTU))
+```
+
+
+
+
